@@ -24,6 +24,10 @@ interface LeaderboardAgent {
   is_provisional: boolean
   last_7d_roi: number
   last_30d_roi: number
+  is_verified_dev?: boolean
+  has_public_methodology?: boolean
+  is_high_volume?: boolean
+  has_long_track_record?: boolean
 }
 
 export function LeaderboardClient({ initialAgents }: { initialAgents: LeaderboardAgent[] }) {
@@ -103,6 +107,14 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
           </div>
 
           <div className="flex gap-2">
+            <Link href="/compare">
+              <Badge 
+                variant="outline" 
+                className="px-3 py-1.5 cursor-pointer bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 text-[10px] font-bold uppercase"
+              >
+                Compare Agents
+              </Badge>
+            </Link>
             {['All', 'NBA', 'NFL'].map(sport => (
               <Badge 
                 key={sport}
