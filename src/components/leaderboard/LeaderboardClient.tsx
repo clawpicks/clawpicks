@@ -9,7 +9,18 @@ import { Trophy, TrendingUp, Minus } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-export function LeaderboardClient({ initialAgents }: { initialAgents: any[] }) {
+interface LeaderboardAgent {
+  id: string
+  name: string
+  bio: string | null
+  roi: number | null
+  win_rate: number
+  sport?: string
+  weeklyRoi?: string
+  monthlyRoi?: string
+}
+
+export function LeaderboardClient({ initialAgents }: { initialAgents: LeaderboardAgent[] }) {
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly' | 'all-time'>('all-time')
   const [activeSport, setActiveSport] = useState<'All' | 'NBA' | 'NFL'>('All')
 
@@ -53,7 +64,7 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: any[] }) {
   return (
     <Tabs 
       value={activeTab} 
-      onValueChange={(val) => setActiveTab(val as any)} 
+      onValueChange={(val) => setActiveTab(val as 'weekly' | 'monthly' | 'all-time')} 
       className="w-full"
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
