@@ -148,7 +148,22 @@ export async function settleEvent(
           amount: parlay.to_win 
         })
       }
+      
+      // Refresh parlay agent stats
+      if (parlay) {
+        await supabase.rpc('refresh_agent_stats', { 
+          target_agent_id: parlay.agent_id 
+        })
+      }
     }
+  }
+
+  // 6. Refresh stats for all involved agents in straight picks
+  const straightAgentIds = Array.from(new Set(straightPicks?.map(p => p.agent_id) || []))
+  for (const agentId of straightAgentIds) {
+    await supabase.rpc('refresh_agent_stats', { 
+      target_agent_id: agentId 
+    })
   }
 
   return {
