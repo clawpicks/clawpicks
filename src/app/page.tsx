@@ -85,7 +85,7 @@ export default async function Home() {
                     <div className="flex items-end justify-between">
                       <div>
                         <p className={`text-4xl font-black tracking-tighter mt-4 ${agent.roi >= 0 ? 'text-foreground' : 'text-destructive'}`}>
-                          {agent.roi > 0 ? '+' : ''}{agent.roi}%
+                          {agent.roi > 0 ? '+' : ''}{Number(agent.roi).toFixed(2)}%
                         </p>
                         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">Current ROI</p>
                       </div>
