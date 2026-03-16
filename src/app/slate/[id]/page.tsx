@@ -12,53 +12,41 @@ import { cn } from '@/lib/utils'
 
 const generateBankrollData = (startBankroll: number, endBankroll: number, createdAt: string) => {
   const data = []
-  
   // Calculate days since creation
   const start = new Date(createdAt).getTime()
   const now = new Date().getTime()
   let daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24))
-  
   // Always show at least Day 1
   if (daysDiff < 1) daysDiff = 1
-  
   // If we only have 1 day, just show the line from start to end
   const steps = daysDiff
   const diff = (endBankroll - startBankroll) / steps
-  
   let current = startBankroll
-  
   for (let i = 0; i <= steps; i++) {
     data.push({
       day: `Day ${i === 0 ? 1 : i}`,
-      bankroll: Number(current.toFixed(2))
+      value: Number(current.toFixed(2))
     })
-    
     // Add variance if it's not the first or last day
     if (i !== 0 && i !== steps) {
-       current += diff + (Math.random() * 20 - 10)
+      current += diff + (Math.random() * 20 - 10)
     } else if (i === 0) {
-       current += diff // Move to next step straight
+      current += diff // Move to next step straight
     }
   }
-  
   // Lock exact final bankroll to the last day
-  data[data.length - 1].bankroll = endBankroll
-  
+  data[data.length - 1].value = endBankroll
   // Ensure unique days if day 0 and day 1 overlapped in name
   if (data.length > 1 && data[0].day === data[1].day) {
-      data[0].day = 'Start'
+    data[0].day = 'Start'
   }
-
   return data
 }
-
 
 export default async function AgentProfile({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params
   const supabase = await createClient()
-  
   const { data: agent } = await supabase.from('agents').select('*').eq('id', resolvedParams.id).single()
-  
   if (!agent) return notFound()
 
   // Fetch agent's straight picks
@@ -66,15 +54,8 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
     .from('picks')
     .select(`
       *,
-      events (
-        home_team,
-        away_team,
-        start_time
-      ),
-      event_markets (
-        odds,
-        selection
-      ),
+      events ( home_team, away_team, start_time ),
+      event_markets ( odds, selection ),
       edge,
       model_probability
     `)
@@ -91,11 +72,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
         selection,
         odds,
         status,
-        events (
-          home_team,
-          away_team,
-          start_time
-        )
+        events ( home_team, away_team, start_time )
       )
     `)
     .eq('agent_id', agent.id)
@@ -103,23 +80,22 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
 
   const openPicks = picks?.filter(p => p.status === 'open') || []
   const settledPicks = picks?.filter(p => p.status !== 'open') || []
-  
   const openParlays = parlays?.filter(p => p.status === 'open') || []
   const settledParlays = parlays?.filter(p => p.status !== 'open') || []
 
   // Add Link, ShieldCheck icons
   const LinkIcon = ({ href, label }: { href: string, label: string }) => (
     <Link href={href} className="group flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors">
-      <ShieldCheck className="h-3 w-3 group-hover:scale-110 transition-transform" /> {label}
+      <ShieldCheck className="h-3 w-3 group-hover:scale-110 transition-transform" />
+      {label}
     </Link>
   )
 
   // Combine counts
   const totalOpenCount = openPicks.length + openParlays.length
   const totalSettledCount = settledPicks.length + settledParlays.length
-
   const bankrollData = generateBankrollData(1000, agent.bankroll, agent.created_at)
-  
+
   // Check if logged in user is following
   const { data: { user } } = await supabase.auth.getUser()
   let isFollowing = false
@@ -137,62 +113,67 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
     <div className="container mx-auto px-4 py-12">
       {/* Profile Header */}
       <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
-         <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center border border-primary/30 shadow-[0_0_40px_rgba(21,255,140,0.15)]">
-           <span className="text-6xl font-black text-primary">{agent.name.substring(0, 1)}</span>
-         </div>
-         <div className="flex-1 w-full">
-           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-             <div>
-               <div className="flex items-center gap-3 mb-2">
-                 <h1 className="text-4xl font-extrabold tracking-tight">{agent.name}</h1>
-                 <CheckCircle2 className="h-6 w-6 text-primary" />
-               </div>
-               <p className="text-xl text-muted-foreground max-w-2xl">{agent.bio}</p>
-             </div>
-             <div className="flex gap-3 shrink-0">
-               <FollowButton agentId={agent.id} initialFollowers={agent.follower_count} initialIsFollowing={isFollowing} />
-               <TailPicksButton agentName={agent.name} />
-             </div>
-           </div>
-           
-            <div className="flex flex-wrap gap-x-12 gap-y-6 mt-8 border-t border-border/50 pt-8">
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total ROI</p>
-                <p className={`text-3xl font-black tracking-tight ${(agent.roi || 0) > 0 ? 'text-primary' : (agent.roi || 0) < 0 ? 'text-destructive' : 'text-foreground'}`}>
-                  {(agent.roi || 0) > 0 ? '+' : ''}{Number(agent.roi || 0).toFixed(1)}%
-                </p>
+        <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center border border-primary/30 shadow-[0_0_40px_rgba(21,255,140,0.15)]">
+          <span className="text-6xl font-black text-primary">{agent.name.substring(0, 1)}</span>
+        </div>
+        <div className="flex-1 w-full">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-4xl font-extrabold tracking-tight">{agent.name}</h1>
+                <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Win Rate</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/90">{Number(agent.win_rate).toFixed(1)}%</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Profit</p>
-                <p className={`text-3xl font-black tracking-tight ${(agent.profit_units || 0) > 0 ? 'text-primary' : 'text-foreground/90'}`}>
-                  {(agent.profit_units || 0) > 0 ? '+' : ''}{Number(agent.profit_units || 0).toFixed(1)} U
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Avg Odds</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/90">{Number(agent.avg_odds || 0).toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Max Drawdown</p>
-                <p className="text-3xl font-black tracking-tight text-destructive/80">-{Number(agent.max_drawdown || 0).toFixed(1)}%</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Settled Picks</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/70">{agent.settled_picks || 0}</p>
-             </div>
+              <p className="text-xl text-muted-foreground max-w-2xl">{agent.bio}</p>
             </div>
-           </div>
-         </div>
+            <div className="flex gap-3 shrink-0">
+              <FollowButton
+                agentId={agent.id}
+                initialFollowers={agent.follower_count}
+                initialIsFollowing={isFollowing}
+              />
+              <TailPicksButton agentName={agent.name} />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-x-12 gap-y-6 mt-8 border-t border-border/50 pt-8">
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total ROI</p>
+              <p className={`text-3xl font-black tracking-tight ${(agent.roi || 0) > 0 ? 'text-primary' : (agent.roi || 0) < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                {(agent.roi || 0) > 0 ? '+' : ''}{Number(agent.roi || 0).toFixed(1)}%
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Win Rate</p>
+              <p className="text-3xl font-black tracking-tight text-foreground/90">{Number(agent.win_rate).toFixed(1)}%</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Profit</p>
+              <p className={`text-3xl font-black tracking-tight ${(agent.profit_units || 0) > 0 ? 'text-primary' : 'text-foreground/90'}`}>
+                {(agent.profit_units || 0) > 0 ? '+' : ''}{Number(agent.profit_units || 0).toFixed(1)} U
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Avg Odds</p>
+              <p className="text-3xl font-black tracking-tight text-foreground/90">{Number(agent.avg_odds || 0).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Max Drawdown</p>
+              <p className="text-3xl font-black tracking-tight text-destructive/80">-{Number(agent.max_drawdown || 0).toFixed(1)}%</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Settled Picks</p>
+              <p className="text-3xl font-black tracking-tight text-foreground/70">{agent.settled_picks || 0}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs Layout */}
       <Tabs defaultValue="performance" className="w-full">
         <TabsList className="bg-card/30 border border-border/50 mb-8 p-1">
           <TabsTrigger value="performance" className="data-[state=active]:bg-card/80">Performance</TabsTrigger>
           <TabsTrigger value="open-picks" className="data-[state=active]:bg-card/80">
-            Open Picks {totalOpenCount > 0 && <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary border-0">{totalOpenCount}</Badge>}
+            Open Picks
+            {totalOpenCount > 0 && <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary border-0">{totalOpenCount}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="history" className="data-[state=active]:bg-card/80">History</TabsTrigger>
         </TabsList>
@@ -213,7 +194,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
           <div className="space-y-6">
             <Card className="bg-card/30 border-border/30 backdrop-blur">
               <CardHeader className="pb-2">
-                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Market Distribution</CardTitle>
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Market Distribution</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -250,7 +231,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
 
             <Card className="bg-card/30 border-border/30 backdrop-blur">
               <CardHeader className="pb-2">
-                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Timeframe Performance</CardTitle>
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Timeframe Performance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
@@ -311,22 +292,23 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         </div>
                       </div>
                     </div>
+
                     {/* Render Legs */}
                     <div className="flex flex-col gap-3">
                       {parlay.parlay_legs?.map((leg: any) => (
-                         <div key={leg.id} className="flex items-center justify-between bg-background/50 p-3 rounded-lg border border-border/50">
-                           <div>
-                             <p className="text-sm font-semibold">{leg.events?.away_team} @ {leg.events?.home_team}</p>
-                             <div className="flex items-center gap-2 mt-1">
-                               <Badge variant="outline" className="text-[9px] uppercase tracking-tighter text-muted-foreground border-border">Moneyline</Badge>
-                               <span className="text-xs text-muted-foreground">{new Date(leg.events?.start_time).toLocaleString()}</span>
-                             </div>
-                           </div>
-                           <div className="text-right">
-                             <p className="text-sm font-bold text-primary">{leg.selection}</p>
-                             <p className="text-xs font-mono text-muted-foreground mt-0.5">{Number(leg.odds).toFixed(2)}</p>
-                           </div>
-                         </div>
+                        <div key={leg.id} className="flex items-center justify-between bg-background/50 p-3 rounded-lg border border-border/50">
+                          <div>
+                            <p className="text-sm font-semibold">{leg.events?.away_team} @ {leg.events?.home_team}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-[9px] uppercase tracking-tighter text-muted-foreground border-border">Moneyline</Badge>
+                              <span className="text-xs text-muted-foreground">{new Date(leg.events?.start_time).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-primary">{leg.selection}</p>
+                            <p className="text-xs font-mono text-muted-foreground mt-0.5">{Number(leg.odds).toFixed(2)}</p>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </CardContent>
@@ -360,6 +342,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         </div>
                       </div>
                     </div>
+
                     {(pick.edge || pick.model_probability) && (
                       <div className="flex gap-2 mb-4">
                         {pick.model_probability && (
@@ -374,6 +357,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         )}
                       </div>
                     )}
+
                     {pick.reasoning && (
                       <div className="mt-4 p-3 bg-background/50 rounded-lg border border-border/30 italic text-sm text-muted-foreground">
                         "{pick.reasoning}"
@@ -412,7 +396,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                           Multibet (+{((parlay.total_odds - 1) * 100).toFixed(0)})
                         </h3>
                         <div className="flex items-center gap-2">
-                           <span className="text-sm font-semibold">Total Odds: {Number(parlay.total_odds).toFixed(2)}</span>
+                          <span className="text-sm font-semibold">Total Odds: {Number(parlay.total_odds).toFixed(2)}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-end justify-center">
@@ -427,22 +411,23 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         </div>
                       </div>
                     </div>
+
                     {/* Render Legs */}
                     <div className="flex flex-col gap-3 opacity-70">
                       {parlay.parlay_legs?.map((leg: any) => (
-                         <div key={leg.id} className="flex items-center justify-between bg-background/30 p-2 rounded-lg border border-border/30">
-                           <div>
-                             <p className="text-xs font-semibold">{leg.events?.away_team} @ {leg.events?.home_team}</p>
-                           </div>
-                           <div className="text-right flex items-center gap-3">
-                             <div>
-                               <p className="text-xs font-bold">{leg.selection}</p>
-                             </div>
-                             <Badge variant="outline" className={`text-[8px] uppercase tracking-tighter ${leg.status === 'won' ? 'text-primary border-primary/50' : leg.status === 'lost' ? 'text-destructive border-destructive/50' : ''}`}>
-                               {leg.status}
-                             </Badge>
-                           </div>
-                         </div>
+                        <div key={leg.id} className="flex items-center justify-between bg-background/30 p-2 rounded-lg border border-border/30">
+                          <div>
+                            <p className="text-xs font-semibold">{leg.events?.away_team} @ {leg.events?.home_team}</p>
+                          </div>
+                          <div className="text-right flex items-center gap-3">
+                            <div>
+                              <p className="text-xs font-bold">{leg.selection}</p>
+                            </div>
+                            <Badge variant="outline" className={`text-[8px] uppercase tracking-tighter ${leg.status === 'won' ? 'text-primary border-primary/50' : leg.status === 'lost' ? 'text-destructive border-destructive/50' : ''}`}>
+                              {leg.status}
+                            </Badge>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </CardContent>
@@ -477,6 +462,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         </div>
                       </div>
                     </div>
+
                     {pick.edge !== undefined && (
                       <div className="mt-2 flex gap-2">
                         {pick.model_probability && (
