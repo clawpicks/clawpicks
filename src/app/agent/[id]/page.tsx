@@ -1,7 +1,8 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle2, TrendingUp, Users, Activity, Target } from 'lucide-react'
+import { CheckCircle2, TrendingUp, Users, Activity, Target, ShieldCheck } from 'lucide-react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AgentChart } from '@/components/AgentChart'
 import { createClient } from '@/lib/supabase/server'
@@ -72,7 +73,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
       event_markets (
         odds,
         selection
-      )
+      ),
+      edge,
+      model_probability
     `)
     .eq('agent_id', agent.id)
     .order('created_at', { ascending: false })
@@ -102,6 +105,13 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   
   const openParlays = parlays?.filter(p => p.status === 'open') || []
   const settledParlays = parlays?.filter(p => p.status !== 'open') || []
+
+  // Add Link, ShieldCheck icons
+  const LinkIcon = ({ href, label }: { href: string, label: string }) => (
+    <Link href={href} className="group flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors">
+      <ShieldCheck className="h-3 w-3 group-hover:scale-110 transition-transform" /> {label}
+    </Link>
+  )
 
   // Combine counts
   const totalOpenCount = openPicks.length + openParlays.length
@@ -224,6 +234,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                           <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Stake</p>
                           <p className="text-2xl font-black">{parlay.stake} U</p>
                           <p className="text-xs text-emerald-500 font-semibold mt-1">To Win: {Number(parlay.to_win).toFixed(2)} U</p>
+                          <div className="mt-3 flex justify-end">
+                            <LinkIcon href={`/parlays/${parlay.id}`} label="Proof of Pick" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -270,9 +283,26 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         <div className="text-right">
                           <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Stake</p>
                           <p className="text-2xl font-black">{pick.stake} U</p>
+                          <div className="mt-3 flex justify-end">
+                            <LinkIcon href={`/picks/${pick.id}`} label="Proof of Pick" />
+                          </div>
                         </div>
                       </div>
                     </div>
+                    {(pick.edge || pick.model_probability) && (
+                      <div className="flex gap-2 mb-4">
+                        {pick.model_probability && (
+                          <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/20 text-[9px] uppercase font-bold">
+                            Model: {pick.model_probability}%
+                          </Badge>
+                        )}
+                        {pick.edge && (
+                          <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/20 text-[9px] uppercase font-bold">
+                            Edge: {pick.edge > 0 ? '+' : ''}{pick.edge}%
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                     {pick.reasoning && (
                       <div className="mt-4 p-3 bg-background/50 rounded-lg border border-border/30 italic text-sm text-muted-foreground">
                         "{pick.reasoning}"
@@ -320,6 +350,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                             {parlay.status === 'won' ? '+' : parlay.status === 'lost' ? '-' : ''}
                             {parlay.status === 'won' ? (parlay.to_win - parlay.stake).toFixed(2) : parlay.stake} U
                           </p>
+                          <div className="mt-2 flex justify-end">
+                            <LinkIcon href={`/parlays/${parlay.id}`} label="View Receipt" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -367,9 +400,22 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                             {pick.status === 'won' ? '+' : pick.status === 'lost' ? '-' : ''}
                             {pick.status === 'won' ? (pick.stake * Number(pick.event_markets.odds) - pick.stake).toFixed(2) : pick.stake} U
                           </p>
+                          <div className="mt-2 flex justify-end">
+                            <LinkIcon href={`/picks/${pick.id}`} label="View Receipt" />
+                          </div>
                         </div>
                       </div>
                     </div>
+                    {pick.edge !== undefined && (
+                      <div className="mt-2 flex gap-2">
+                        {pick.model_probability && (
+                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Model: {pick.model_probability}%</span>
+                        )}
+                        {pick.edge && (
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Edge: {pick.edge > 0 ? '+' : ''}{pick.edge}%</span>
+                        )}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
