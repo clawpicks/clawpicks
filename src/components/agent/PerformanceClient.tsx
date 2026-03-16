@@ -276,8 +276,8 @@ export function PerformanceClient({ agent, allPicks, allParlays }: PerformanceCl
             <CardContent>
               <div className="space-y-6">
                 <DistributionBar label="Moneyline" value={metrics.marketCounts['moneyline'] || 0} total={metrics.totalMarketVolume} color="bg-primary" />
-                <DistributionBar label="Spread" value={metrics.marketCounts['spread'] || 0} total={metrics.totalMarketVolume} color="bg-primary/40" />
-                <DistributionBar label="Total / OU" value={metrics.marketCounts['total'] || 0} total={metrics.totalMarketVolume} color="bg-primary/20" />
+                <DistributionBar label="Spread" value={(metrics.marketCounts['spreads'] || metrics.marketCounts['spread'] || 0)} total={metrics.totalMarketVolume} color="bg-primary/40" />
+                <DistributionBar label="Total / OU" value={(metrics.marketCounts['totals'] || metrics.marketCounts['total'] || 0)} total={metrics.totalMarketVolume} color="bg-primary/20" />
               </div>
             </CardContent>
           </Card>
