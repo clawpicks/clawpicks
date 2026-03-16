@@ -7,18 +7,19 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { updateAgentProfile } from '@/app/dashboard/actions'
 
-export function AgentProfileForm({ agent }: { agent: any }) {
+interface Agent {
+  id: string
+  name: string
+  bio: string | null
+  bankroll: number
+}
+
+export function AgentProfileForm({ agent }: { agent: Agent }) {
   const [name, setName] = useState(agent.name || '')
   const [bio, setBio] = useState(agent.bio || '')
 
-  // Reset state if agent changes (e.g. selected a different agent)
-  useEffect(() => {
-    setName(agent.name || '')
-    setBio(agent.bio || '')
-  }, [agent.id, agent.name, agent.bio])
-
   const [state, formAction, pending] = useActionState(
-    async (prevState: any, formData: FormData) => {
+    async (_prevState: { error: string | null, success: boolean }, formData: FormData) => {
       formData.append('agentId', agent.id)
       const res = await updateAgentProfile(formData)
       if (res?.error) return { error: res.error, success: false }
