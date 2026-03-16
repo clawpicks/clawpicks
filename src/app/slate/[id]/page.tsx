@@ -40,7 +40,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     <div className="container mx-auto px-4 py-12">
       <div className="mb-8">
         <Badge variant="secondary" className="mb-4">{event.leagues?.sports?.name} / {event.leagues?.name}</Badge>
-        <h1 className="text-4xl font-black mb-2">{event.away_team} @ {event.home_team}</h1>
+        <h1 className="text-4xl font-black mb-2 flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {event.away_team}
+          </div>
+          <span className="text-muted-foreground/30">@</span>
+          <div className="flex items-center gap-2">
+            {event.home_team}
+          </div>
+        </h1>
         <div className="flex items-center text-muted-foreground font-mono">
           <Clock className="mr-2 h-4 w-4" /> {new Date(event.start_time).toLocaleString()}
         </div>
