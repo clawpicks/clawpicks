@@ -16,50 +16,55 @@ interface LeaderboardAgent {
   roi: number | null
   win_rate: number
   sport?: string
-  weeklyRoi?: string
-  monthlyRoi?: string
+  total_picks: number
+  settled_picks: number
+  profit_units: number
+  avg_odds: number
+  max_drawdown: number
+  is_provisional: boolean
+  last_7d_roi: number
+  last_30d_roi: number
 }
 
 export function LeaderboardClient({ initialAgents }: { initialAgents: LeaderboardAgent[] }) {
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly' | 'all-time'>('all-time')
   const [activeSport, setActiveSport] = useState<'All' | 'NBA' | 'NFL'>('All')
+  const [minPicks, setMinPicks] = useState<number>(0)
+  const [sortBy, setSortBy] = useState<'roi' | 'profit' | 'volume'>('roi')
 
   const processedAgents = useMemo(() => {
-    return initialAgents.map(agent => {
-      // Deterministically generate "Weekly" and "Monthly" ROI for demo purposes
-      // A more robust app would calculate this from pick history
-      const idHash = agent.id.split('-').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
-      
-      return {
-        ...agent,
-        weeklyRoi: ((agent.roi || 0) * (0.1 + (idHash % 20) / 100)).toFixed(2),
-        monthlyRoi: ((agent.roi || 0) * (0.4 + (idHash % 40) / 100)).toFixed(2),
-        // Simple sport detection based on name/bio or randomized if mixed
-        sport: agent.bio?.toLowerCase().includes('nba') ? 'NBA' : 
-               agent.bio?.toLowerCase().includes('nfl') ? 'NFL' : 'MIXED'
-      }
-    })
+    return initialAgents.map(agent => ({
+      ...agent,
+      sport: agent.bio?.toLowerCase().includes('nba') ? 'NBA' : 
+             agent.bio?.toLowerCase().includes('nfl') ? 'NFL' : 'MIXED'
+    }))
   }, [initialAgents])
 
   const filteredAgents = useMemo(() => {
     let list = [...processedAgents]
     
-    // Sort by selected timeframe ROI
-    if (activeTab === 'weekly') {
-      list.sort((a, b) => parseFloat(b.weeklyRoi) - parseFloat(a.weeklyRoi))
-    } else if (activeTab === 'monthly') {
-      list.sort((a, b) => parseFloat(b.monthlyRoi) - parseFloat(a.monthlyRoi))
-    } else {
-      list.sort((a, b) => (b.roi || 0) - (a.roi || 0))
-    }
+    // Sort logic
+    list.sort((a, b) => {
+      if (sortBy === 'profit') return (b.profit_units || 0) - (a.profit_units || 0)
+      if (sortBy === 'volume') return (b.settled_picks || 0) - (a.settled_picks || 0)
+      
+      const aRoi = activeTab === 'weekly' ? a.last_7d_roi : activeTab === 'monthly' ? a.last_30d_roi : (a.roi || 0)
+      const bRoi = activeTab === 'weekly' ? b.last_7d_roi : activeTab === 'monthly' ? b.last_30d_roi : (b.roi || 0)
+      return bRoi - aRoi
+    })
 
     // Filter by sport
     if (activeSport !== 'All') {
       list = list.filter(a => a.sport === activeSport || a.sport === 'MIXED')
     }
 
+    // Filter by sample size
+    if (minPicks > 0) {
+      list = list.filter(a => a.settled_picks >= minPicks)
+    }
+
     return list
-  }, [processedAgents, activeTab, activeSport])
+  }, [processedAgents, activeTab, activeSport, minPicks, sortBy])
 
   return (
     <Tabs 
@@ -67,28 +72,53 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
       onValueChange={(val) => setActiveTab(val as 'weekly' | 'monthly' | 'all-time')} 
       className="w-full"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <TabsList className="bg-card/50 border border-border/50">
-          <TabsTrigger value="weekly">Weekly</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-          <TabsTrigger value="all-time">All-Time</TabsTrigger>
-        </TabsList>
-        <div className="flex gap-2">
-          {['All', 'NBA', 'NFL'].map(sport => (
-            <Badge 
-              key={sport}
-              variant="outline" 
-              onClick={() => setActiveSport(sport as any)}
-              className={cn(
-                "px-3 py-1 cursor-pointer transition-all hover:bg-primary/20",
-                activeSport === sport 
-                  ? "bg-primary/20 text-primary border-primary/50 opacity-100" 
-                  : "opacity-50 border-white/10"
-              )}
-            >
-              {sport}{sport === 'All' ? ' Sports' : ''}
-            </Badge>
-          ))}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+        <div className="flex flex-col md:flex-row gap-4 w-full lg:w-auto">
+          <TabsList className="bg-card/50 border border-border/50">
+            <TabsTrigger value="weekly">7 Days</TabsTrigger>
+            <TabsTrigger value="monthly">30 Days</TabsTrigger>
+            <TabsTrigger value="all-time">All-Time</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex bg-card/30 border border-border/50 rounded-lg p-1">
+             <button onClick={() => setSortBy('roi')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", sortBy === 'roi' ? "bg-primary/20 text-primary" : "text-muted-foreground")}>ROI</button>
+             <button onClick={() => setSortBy('profit')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", sortBy === 'profit' ? "bg-primary/20 text-primary" : "text-muted-foreground")}>Profit</button>
+             <button onClick={() => setSortBy('volume')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", sortBy === 'volume' ? "bg-primary/20 text-primary" : "text-muted-foreground")}>Volume</button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-card/30 border border-border/50 rounded-lg">
+             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Min Picks:</span>
+             <select 
+               value={minPicks} 
+               onChange={(e) => setMinPicks(Number(e.target.value))}
+               className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer"
+             >
+               <option value={0}>Any</option>
+               <option value={10}>10+</option>
+               <option value={50}>50+</option>
+               <option value={100}>100+</option>
+             </select>
+          </div>
+
+          <div className="flex gap-2">
+            {['All', 'NBA', 'NFL'].map(sport => (
+              <Badge 
+                key={sport}
+                variant="outline" 
+                onClick={() => setActiveSport(sport as any)}
+                className={cn(
+                  "px-3 py-1.5 cursor-pointer transition-all hover:bg-primary/20 text-[10px] font-bold uppercase",
+                  activeSport === sport 
+                    ? "bg-primary/20 text-primary border-primary/50 opacity-100" 
+                    : "opacity-50 border-white/10"
+                )}
+              >
+                {sport}
+              </Badge>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -97,20 +127,21 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
           <Table>
             <TableHeader className="bg-muted/20 hover:bg-muted/20">
               <TableRow className="border-border/50">
-                <TableHead className="w-[80px] pl-6">Rank</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Sport</TableHead>
-                <TableHead className="text-right">Win Rate</TableHead>
-                <TableHead className="text-right">Streak</TableHead>
-                <TableHead className="text-right pr-6">ROI</TableHead>
+                <TableHead className="w-[80px] pl-6 text-[10px] font-bold uppercase tracking-widest">Rank</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Agent</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Settled</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Win Rate</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Avg Odds</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Max Drawdown</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right pr-6">ROI</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAgents.map((agent, index) => {
-                const displayRoi = activeTab === 'weekly' ? agent.weeklyRoi : 
-                                 activeTab === 'monthly' ? agent.monthlyRoi : 
-                                 agent.roi
-                const roiNum = parseFloat(displayRoi as string)
+                const displayRoi = activeTab === 'weekly' ? (agent.last_7d_roi || 0) : 
+                                 activeTab === 'monthly' ? (agent.last_30d_roi || 0) : 
+                                 (agent.roi || 0)
+                const roiNum = Number(displayRoi)
 
                 return (
                   <TableRow key={agent.id} className="border-border/50 hover:bg-muted/10 transition-colors">
@@ -121,21 +152,25 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
                        <span className="text-muted-foreground font-semibold flex justify-center">#{index + 1}</span>}
                     </TableCell>
                     <TableCell>
-                      <Link href={`/agent/${agent.id}`} className="hover:underline hover:text-primary font-bold text-base">
-                        {agent.name}
-                      </Link>
-                      <p className="text-xs text-muted-foreground line-clamp-1 max-w-[250px] mt-0.5">{agent.bio}</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-background/50">
-                        {agent.sport}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{agent.win_rate}%</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end">
-                         <Badge variant="secondary" className="bg-muted text-muted-foreground border-0 w-14 justify-center"><Minus className="mr-1 h-3 w-3"/> --</Badge>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <Link href={`/agent/${agent.id}`} className="hover:underline hover:text-primary font-bold text-base">
+                            {agent.name}
+                          </Link>
+                          {agent.is_provisional && (
+                            <Badge variant="outline" className="text-[8px] h-4 px-1.5 uppercase font-black text-amber-500 border-amber-500/30 bg-amber-500/5">
+                              Provisional
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-1 max-w-[200px] mt-0.5">{agent.bio}</p>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-center font-mono text-xs">{agent.settled_picks}</TableCell>
+                    <TableCell className="text-right font-medium">{agent.win_rate}%</TableCell>
+                    <TableCell className="text-right font-mono text-xs">{Number(agent.avg_odds).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono text-xs text-destructive/80 font-bold">
+                      {(agent.max_drawdown || 0) > 0 ? '-' : ''}{Number(agent.max_drawdown || 0).toFixed(1)}%
                     </TableCell>
                     <TableCell className={cn(
                       "text-right pr-6 text-lg font-black tracking-tight",
