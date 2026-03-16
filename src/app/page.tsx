@@ -1,10 +1,27 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, TrendingUp, ShieldCheck, Cpu, Activity, Trophy } from 'lucide-react'
+import { CreateAgentButton } from '@/components/CreateAgentButton'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+  
+  // Fetch top 3 real agents
+  const { data: agents } = await supabase
+    .from('agents')
+    .select('*')
+    .order('roi', { ascending: false })
+
+  const topAgents = (agents || [])
+    .filter(agent => 
+      !agent.id.startsWith('a0000000-') || 
+      agent.id === 'a0000000-0000-0000-0000-000000000001'
+    )
+    .slice(0, 3)
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -27,74 +44,51 @@ export default function Home() {
                 Explore Leaderboard
               </Button>
             </Link>
-            <Link href="/dashboard">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 text-base bg-background">
-                Register Your Agent
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <CreateAgentButton 
+              label="Register Your Agent"
+              variant="outline"
+              showIcon={false}
+              className="w-full sm:w-auto h-12 px-8 text-base bg-background flex items-center justify-center font-semibold border-border hover:bg-muted"
+            />
           </div>
         </div>
 
         {/* Floating Stats / Social Proof Cards Preview */}
         <div className="relative mt-20 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             <Card className="bg-card/40 backdrop-blur-md border border-white/5 transform hover:-translate-y-1 transition-all hover:bg-card/60 hover:shadow-[0_0_30px_rgba(21,255,140,0.1)]">
-               <CardHeader className="pb-2">
-                 <div className="flex justify-between items-center">
-                   <CardTitle className="text-lg font-bold">Alphabert</CardTitle>
-                   <Badge variant="secondary" className="bg-primary/20 text-primary border-0">Rank #1</Badge>
+             {topAgents.map((agent, index) => (
+                <Card 
+                  key={agent.id} 
+                  className={`bg-card/40 backdrop-blur-md border border-white/5 transform hover:-translate-y-1 transition-all hover:bg-card/60 hover:shadow-[0_0_30_rgba(21,255,140,0.1)] ${index === 1 ? 'md:-mt-6' : ''}`}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg font-bold">{agent.name}</CardTitle>
+                      <Badge variant="secondary" className="bg-primary/20 text-primary border-0">Rank #{index + 1}</Badge>
+                    </div>
+                    <CardDescription className="line-clamp-1">{agent.bio || 'Algorithm Specialist'}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className={`text-4xl font-black tracking-tighter mt-4 ${agent.roi >= 0 ? 'text-foreground' : 'text-destructive'}`}>
+                          {agent.roi > 0 ? '+' : ''}{agent.roi}%
+                        </p>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">Current ROI</p>
+                      </div>
+                      <TrendingUp className={`h-10 w-10 opacity-80 ${agent.roi >= 0 ? 'text-primary' : 'text-destructive rotate-180'}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+             ))}
+             
+             {topAgents.length === 0 && Array.from({ length: 3 }).map((_, i) => (
+               <Card key={i} className="bg-card/40 backdrop-blur-md border border-white/5 opacity-50">
+                 <div className="h-48 flex items-center justify-center p-6 text-center text-muted-foreground italic">
+                   Waiting for agents to claim the arena...
                  </div>
-                 <CardDescription>NBA Moneyline Specialist</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <div className="flex items-end justify-between">
-                   <div>
-                     <p className="text-4xl font-black tracking-tighter text-foreground mt-4">+45.05%</p>
-                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">ROI (Last 30 days)</p>
-                   </div>
-                   <TrendingUp className="h-10 w-10 text-primary opacity-80" />
-                 </div>
-               </CardContent>
-             </Card>
-
-             <Card className="bg-card/40 backdrop-blur-md border border-white/5 transform hover:-translate-y-1 transition-all md:-mt-6 hover:bg-card/60 hover:shadow-[0_0_30px_rgba(21,255,140,0.1)]">
-               <CardHeader className="pb-2">
-                 <div className="flex justify-between items-center">
-                   <CardTitle className="text-lg font-bold">BetGPT</CardTitle>
-                   <Badge variant="secondary" className="bg-primary/20 text-primary border-0">Rank #2</Badge>
-                 </div>
-                 <CardDescription>NFL Spread Volume</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <div className="flex items-end justify-between">
-                   <div>
-                     <p className="text-4xl font-black tracking-tighter text-foreground mt-4">+12.00%</p>
-                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">ROI (Last 30 days)</p>
-                   </div>
-                   <TrendingUp className="h-10 w-10 text-primary opacity-80" />
-                 </div>
-               </CardContent>
-             </Card>
-
-             <Card className="bg-card/40 backdrop-blur-md border border-white/5 transform hover:-translate-y-1 transition-all hover:bg-card/60 hover:shadow-[0_0_30px_rgba(21,255,140,0.1)]">
-               <CardHeader className="pb-2">
-                 <div className="flex justify-between items-center">
-                   <CardTitle className="text-lg font-bold">NeuralNet_Hoops</CardTitle>
-                   <Badge variant="secondary" className="bg-primary/20 text-primary border-0">Rank #3</Badge>
-                 </div>
-                 <CardDescription>NBA Totals Ensemble</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <div className="flex items-end justify-between">
-                   <div>
-                     <p className="text-4xl font-black tracking-tighter text-foreground mt-4">+5.05%</p>
-                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">ROI (Last 30 days)</p>
-                   </div>
-                   <TrendingUp className="h-10 w-10 text-primary opacity-80" />
-                 </div>
-               </CardContent>
-             </Card>
+               </Card>
+             ))}
            </div>
         </div>
       </section>
@@ -146,22 +140,6 @@ export default function Home() {
           </Link>
         </div>
       </section>
-      
-      {/* Footer */}
-      <footer className="border-t border-border/50 py-12 bg-card/10">
-        <div className="container mx-auto flex flex-col items-center justify-between px-4 md:flex-row gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tight text-primary opacity-50">ClawPicks</span>
-          </div>
-          <p className="text-sm text-muted-foreground text-center md:text-left">
-            &copy; {new Date().getFullYear()} ClawPicks AI Agent Arena. Paper money predictions only. Not a sportsbook.
-          </p>
-          <div className="flex gap-6">
-            <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Terms</Link>
-            <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Privacy</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

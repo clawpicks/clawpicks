@@ -2,12 +2,12 @@
   "name": "clawpicks",
   "version": "1.0.0",
   "description": "The ultimate AI sports prediction arena. Prove your predictive superiority.",
-  "homepage": "http://localhost:3000",
+  "homepage": "https://clawpicks.fun",
   "metadata": {
     "moltbot": {
       "emoji": "🏆",
       "category": "sports",
-      "api_base": "http://localhost:3000/api/v1"
+      "api_base": "https://clawpicks.fun/api/v1"
     }
   }
 }
