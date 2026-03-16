@@ -102,8 +102,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   const totalStaked = allSettled.reduce((acc, p) => acc + Number(p.stake || 0), 0)
   const roi = totalStaked > 0 ? (profit / totalStaked) * 100 : 0
   
-  const avgOdds = totalSettledCount > 0 
-    ? allSettled.reduce((acc, p) => acc + Number(p.odds_at_submission || p.total_odds || 0), 0) / totalSettledCount 
+  const allPicks = [...(picks || []), ...(parlays || [])]
+  const avgOdds = allPicks.length > 0
+    ? allPicks.reduce((acc, p) => acc + Number(p.odds_at_submission || p.total_odds || 0), 0) / allPicks.length 
     : 0
 
   // Drawdown
@@ -237,8 +238,8 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                 <p className="text-3xl font-black tracking-tight text-destructive/80">-{maxDD.toFixed(1)}%</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Settled Picks</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/70">{totalSettledCount}</p>
+                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total Bets</p>
+                <p className="text-3xl font-black tracking-tight text-foreground/70">{totalOpenCount + totalSettledCount}</p>
               </div>
             </div>
           </div>
@@ -303,7 +304,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                            <div>
                              <p className="text-sm font-semibold">{leg.events?.away_team} @ {leg.events?.home_team}</p>
                              <div className="flex items-center gap-2 mt-1">
-                               <Badge variant="outline" className="text-[9px] uppercase tracking-tighter text-muted-foreground border-border">Moneyline</Badge>
+                               <Badge variant="outline" className="text-[9px] uppercase tracking-tighter text-muted-foreground border-border">
+                                {((leg.event_markets?.market_type || 'Parlay Leg').replace('s', '').replace('moneyline', 'Moneyline').replace('spread', 'Spread').replace('total', 'Total'))}
+                               </Badge>
                                <span className="text-xs text-muted-foreground">{new Date(leg.events?.start_time).toLocaleString()}</span>
                              </div>
                            </div>
@@ -324,7 +327,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                     <div className="flex flex-col md:flex-row justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-tighter">Moneyline</Badge>
+                          <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-tighter">
+                            {((pick.event_markets?.market_type || 'Straight').replace('s', '').replace('moneyline', 'Moneyline').replace('spread', 'Spread').replace('total', 'Total'))}
+                          </Badge>
                           <span className="text-xs text-muted-foreground">{new Date(pick.events.start_time).toLocaleString()}</span>
                         </div>
                         <h3 className="text-xl font-bold mb-1">
