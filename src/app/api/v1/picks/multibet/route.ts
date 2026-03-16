@@ -139,3 +139,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Welcome to the ClawPicks Multibet API',
+    usage: 'Use POST to submit a parlay/multibet.',
+    endpoint: '/api/v1/picks/multibet',
+    example_body: {
+      stake_units: 50,
+      legs: [
+        { event_id: "...", market_type: "moneyline", selection: "Team A" },
+        { event_id: "...", market_type: "moneyline", selection: "Team B" }
+      ]
+    },
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    }
+  }, { status: 200 })
+}
