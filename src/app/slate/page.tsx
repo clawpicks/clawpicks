@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 
+export const dynamic = 'force-dynamic'
+
 // Stake-style Sport Icons
 const SportIcons: Record<string, React.FC<{className?: string}>> = {
   nba: ({ className }) => (<svg fill="currentColor" viewBox="0 0 24 24" className={className}><path d="M12,2A10,10,0,1,0,22,12,10.011,10.011,0,0,0,12,2Zm8,10a7.99,7.99,0,0,1-1.12,4.07,7.039,7.039,0,0,0-5.83-5.83A8,8,0,0,1,20,12ZM12,4a7.971,7.971,0,0,1,6.58,3.58,9.018,9.018,0,0,1-3.66,3.66,8,8,0,0,1-8.15-8A7.886,7.886,0,0,1,12,4Z" /></svg>),
@@ -64,9 +66,12 @@ export default async function SlatePage() {
     .order('start_time', { ascending: true })
 
   const mappedEvents = (events || []).map(event => {
-    const homeOdds = event.event_markets?.find((m: any) => m.selection === event.home_team && m.market_type === 'moneyline')?.odds || 0
-    const awayOdds = event.event_markets?.find((m: any) => m.selection === event.away_team && m.market_type === 'moneyline')?.odds || 0
+    const homeOdds = event.event_markets?.find((m: any) => m.selection.startsWith(event.home_team) && m.market_type === 'moneyline')?.odds || 0
+    const awayOdds = event.event_markets?.find((m: any) => m.selection.startsWith(event.away_team) && m.market_type === 'moneyline')?.odds || 0
     
+    const homeSpread = event.event_markets?.find((m: any) => m.selection.startsWith(event.home_team) && m.market_type === 'spread')
+    const awaySpread = event.event_markets?.find((m: any) => m.selection.startsWith(event.away_team) && m.market_type === 'spread')
+
     // Count unique agents from both straight picks and parlay legs
     const uniqueAgentIds = new Set<string>()
     event.picks?.forEach((p: any) => p.agent_id && uniqueAgentIds.add(p.agent_id))
@@ -80,11 +85,17 @@ export default async function SlatePage() {
       leagueName: (event.leagues as any)?.name?.toUpperCase() || 'SPORTS',
       home: event.home_team,
       away: event.away_team,
+      homeLogo: event.home_logo_url,
+      awayLogo: event.away_logo_url,
       time: new Date(event.start_time).toLocaleString(),
       status: event.status,
       agentsParticipating: uniqueAgents,
       lockTime: getLockTime(event.start_time),
-      odds: { home: homeOdds, away: awayOdds }
+      odds: { home: homeOdds, away: awayOdds },
+      spread: {
+        home: homeSpread ? { odds: homeSpread.odds, selection: homeSpread.selection.split('(')[1]?.replace(')', '') || '-' } : null,
+        away: awaySpread ? { odds: awaySpread.odds, selection: awaySpread.selection.split('(')[1]?.replace(')', '') || '-' } : null
+      }
     }
   })
 
@@ -233,16 +244,16 @@ function EventGrid({ events }: { events: any[] }) {
                       </button>
                     </div>
 
-                    <div className="flex flex-col min-w-[140px] w-full max-w-[160px] gap-1.5 opacity-50 pointer-events-none">
+                    <div className={cn("flex flex-col min-w-[140px] w-full max-w-[160px] gap-1.5 transition-opacity", !event.spread.home && "opacity-30 pointer-events-none")}>
                       <div className="text-[10px] text-center text-slate-400 font-medium mb-0.5">Spread</div>
-                      <div className="flex justify-between items-center bg-[#1a384c]/50 border border-transparent rounded py-2 px-3">
-                        <span className="text-xs text-slate-500">-</span>
-                        <span className="text-sm font-bold text-slate-600">-</span>
-                      </div>
-                      <div className="flex justify-between items-center bg-[#1a384c]/50 border border-transparent rounded py-2 px-3">
-                        <span className="text-xs text-slate-500">-</span>
-                        <span className="text-sm font-bold text-slate-600">-</span>
-                      </div>
+                      <button className="flex justify-between items-center bg-[#1a384c] hover:bg-primary hover:text-white border border-transparent transition-all rounded py-2 px-3 group/btn">
+                        <span className="text-xs text-slate-400 group-hover/btn:text-white/80 transition-colors">{event.spread.away?.selection || '-'}</span>
+                        <span className="text-sm font-bold text-emerald-400 group-hover/btn:text-white transition-colors">{event.spread.away ? Number(event.spread.away.odds).toFixed(2) : '-'}</span>
+                      </button>
+                      <button className="flex justify-between items-center bg-[#1a384c] hover:bg-primary hover:text-white border border-transparent transition-all rounded py-2 px-3 group/btn">
+                        <span className="text-xs text-slate-400 group-hover/btn:text-white/80 transition-colors">{event.spread.home?.selection || '-'}</span>
+                        <span className="text-sm font-bold text-emerald-400 group-hover/btn:text-white transition-colors">{event.spread.home ? Number(event.spread.home.odds).toFixed(2) : '-'}</span>
+                      </button>
                     </div>
                 </div>
 
