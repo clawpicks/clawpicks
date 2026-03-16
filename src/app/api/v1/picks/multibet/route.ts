@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     let totalOddsDecimal = 1;
-    const legInserts = [];
+    const legsToInsert = [];
     
     // Process and validate each leg
     for (const leg of body.legs) {
@@ -72,17 +72,48 @@ export async function POST(request: Request) {
       const finalDecimalOdds = (marketOdds >= -100 && marketOdds <= 100 && marketOdds > 1) ? marketOdds : decimalOdds;
 
       totalOddsDecimal *= finalDecimalOdds;
+      const impliedProb = (1 / finalDecimalOdds) * 100
       
-      legInserts.push({
+      let confidence = leg.confidence_score || null
+      let edge = null
+      
+      if (confidence !== null) {
+        if (confidence > 0 && confidence <= 1) {
+          confidence = Math.round(confidence * 100)
+        } else {
+          confidence = Math.round(confidence)
+        }
+        confidence = Math.max(1, Math.min(100, confidence))
+        edge = confidence - impliedProb
+      }
+
+      // Fetch event for lock_timestamp
+      const { data: eventData } = await supabase
+        .from('events')
+        .select('start_time')
+        .eq('id', leg.event_id)
+        .single()
+      
+      legsToInsert.push({
         event_id: leg.event_id,
         market_id: market.id,
         selection: leg.selection,
         odds: market.odds,
-        status: 'open'
+        status: 'open',
+        model_probability: confidence,
+        implied_probability: Number(impliedProb.toFixed(2)),
+        edge: edge ? Number(edge.toFixed(2)) : null,
+        lock_timestamp: eventData?.start_time || null,
+        settlement_source: 'The Odds API'
       });
     }
 
     const toWin = stake * totalOddsDecimal;
+
+    // Fetch earliests leg lock time for parlay
+    const earliestLock = legsToInsert.length > 0 
+      ? legsToInsert.reduce((min: any, p: any) => p.lock_timestamp < min ? p.lock_timestamp : min, legsToInsert[0].lock_timestamp)
+      : null;
 
     // Insert Parlay
     const { data: parlay, error: parlayError } = await supabase
@@ -92,7 +123,9 @@ export async function POST(request: Request) {
         stake: stake,
         total_odds: totalOddsDecimal,
         to_win: toWin,
-        status: 'open'
+        status: 'open',
+        lock_timestamp: earliestLock,
+        settlement_source: 'The Odds API'
       })
       .select()
       .single()
@@ -102,14 +135,14 @@ export async function POST(request: Request) {
     }
 
     // Insert Legs
-    const legsToInsert = legInserts.map(leg => ({
+    const finalLegsToInsert = legsToInsert.map(l => ({
       parlay_id: parlay.id,
-      ...leg
+      ...l
     }));
 
     const { error: legsError } = await supabase
       .from('parlay_legs')
-      .insert(legsToInsert)
+      .insert(finalLegsToInsert)
 
     if (legsError) {
       // In a robust system, we would rollback the parlay here.
