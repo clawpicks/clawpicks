@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 const SPORT_DETAILS: Record<string, { sport_id: string, sport_name: string, league_id: string, league_name: string }> = {
   'basketball_nba': { sport_id: 'nba', sport_name: 'Basketball', league_id: 'nba_regular', league_name: 'NBA' },
   'americanfootball_nfl': { sport_id: 'nfl', sport_name: 'Football', league_id: 'nfl_regular', league_name: 'NFL' },
-  'soccer_uefa_champions_league': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'ucl', league_name: 'Champions League' },
+  'soccer_uefa_champs_league': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'ucl', league_name: 'Champions League' },
   'soccer_epl': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'epl', league_name: 'Premier League' },
   'soccer_germany_bundesliga': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'bundesliga', league_name: 'Bundesliga' },
   'soccer_spain_la_liga': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'laliga', league_name: 'La Liga' },
@@ -30,7 +30,6 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
     throw new Error('Supabase credentials (URL/Service Key) are missing')
   }
 
-  // Private client with service role to bypass RLS
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   if (!oddsApiKey) {
@@ -38,85 +37,115 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
   }
 
   const sports = Object.keys(SPORT_DETAILS)
-  const results = []
+  const results: SyncResult[] = []
 
+  // Lists for bulk operations
+  const allEventsToUpsert: any[] = []
+  const allMarketsToUpsert: any[] = []
+  const sportEntries = new Map<string, any>()
+  const leagueEntries = new Map<string, any>()
+
+  // 1. Fetch data sequentially to avoid 429 Rate Limits from The Odds API
   for (const sportKey of sports) {
     try {
-      console.log(`Syncing ${sportKey}...`)
-      // Added multiple regions and multiple markets (h2h and spreads)
-      const response = await fetch(
+      const detail = SPORT_DETAILS[sportKey]
+      sportEntries.set(detail.sport_id, { id: detail.sport_id, name: detail.sport_name })
+      leagueEntries.set(detail.league_id, { id: detail.league_id, sport_id: detail.sport_id, name: detail.league_name })
+
+      let response = await fetch(
         `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads&oddsFormat=decimal`
       )
 
+      // Simple retry logic for 429
+      if (response.status === 429) {
+        console.log(`Rate limited on ${sportKey}, waiting 2s before retry...`)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        response = await fetch(
+          `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads&oddsFormat=decimal`
+        )
+      }
+
       if (!response.ok) {
-        console.error(`Failed to fetch ${sportKey}: ${response.status} ${response.statusText}`)
+        results.push({ sport: sportKey, error: `API Error: ${response.status} ${response.statusText}` })
         continue
       }
 
       const eventsData = await response.json()
-      const detail = SPORT_DETAILS[sportKey]
+      results.push({ sport: sportKey, count: eventsData.length })
 
-      // 1. Ensure Sport exists
-      await supabase.from('sports').upsert({ id: detail.sport_id, name: detail.sport_name })
-      
-      // 2. Ensure League exists
-      await supabase.from('leagues').upsert({ id: detail.league_id, sport_id: detail.sport_id, name: detail.league_name })
-      
       for (const event of eventsData) {
-        // 3. Upsert Event
-        const { data: eventRow, error: eventError } = await supabase
-          .from('events')
-          .upsert({
-            external_id: event.id,
-            league_id: detail.league_id,
-            home_team: event.home_team,
-            away_team: event.away_team,
-            start_time: event.commence_time,
-            status: 'scheduled'
-          }, { onConflict: 'external_id' })
-          .select('id')
-          .single()
+        allEventsToUpsert.push({
+          external_id: event.id,
+          league_id: detail.league_id,
+          home_team: event.home_team,
+          away_team: event.away_team,
+          start_time: event.commence_time,
+          status: 'scheduled'
+        })
 
-        if (eventError) {
-          console.error(`Error upserting event ${event.id}:`, eventError)
-          continue
-        }
-
-        // 4. Sync Markets
         const bookmaker = event.bookmakers?.[0]
         if (!bookmaker) continue
 
         for (const market of bookmaker.markets) {
           const marketType = market.key === 'h2h' ? 'moneyline' : market.key
-          
           for (const outcome of market.outcomes) {
-            // Spread markets include a 'point' value (handicap)
-            // We append the point to the selection name if it exists (e.g. "Lakers -3.5")
             const selectionName = outcome.point ? `${outcome.name} (${outcome.point > 0 ? '+' : ''}${outcome.point})` : outcome.name
-            const marketExtId = `${event.id}_${market.key}_${outcome.name}`
-            
-            const { error: marketError } = await supabase
-              .from('event_markets')
-              .upsert({
-                external_id: marketExtId,
-                event_id: eventRow.id,
+            allMarketsToUpsert.push({
+              event_id_external: event.id, 
+              payload: {
+                external_id: `${event.id}_${market.key}_${outcome.name}`,
                 market_type: marketType,
                 selection: selectionName,
                 odds: outcome.price
-              }, { onConflict: 'external_id' })
-
-            if (marketError) {
-              console.error(`Error upserting market ${marketExtId}:`, marketError)
-            }
+              }
+            })
           }
         }
       }
       
-      results.push({ sport: sportKey, count: eventsData.length })
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-      console.error(`Error syncing ${sportKey}:`, errorMessage)
-      results.push({ sport: sportKey, error: errorMessage })
+      // Increased buffer to avoid rate limit spikes
+      await new Promise(resolve => setTimeout(resolve, 800))
+    } catch (err) {
+      results.push({ sport: sportKey, error: err instanceof Error ? err.message : 'Unknown' })
+    }
+  }
+
+  // 2. Perform bulk DB operations (very fast)
+  if (sportEntries.size > 0) {
+    await supabase.from('sports').upsert(Array.from(sportEntries.values()), { onConflict: 'id' })
+  }
+  if (leagueEntries.size > 0) {
+    await supabase.from('leagues').upsert(Array.from(leagueEntries.values()), { onConflict: 'id' })
+  }
+
+  if (allEventsToUpsert.length > 0) {
+    const { data: eventRows, error: eventError } = await supabase
+      .from('events')
+      .upsert(allEventsToUpsert, { onConflict: 'external_id' })
+      .select('id, external_id')
+
+    if (eventError) {
+      console.error('Bulk Event Upsert Error:', eventError)
+      return results
+    }
+
+    const eventIdMap = new Map((eventRows || []).map(r => [r.external_id, r.id]))
+
+    const finalMarkets = allMarketsToUpsert
+      .map(m => ({
+        ...m.payload,
+        event_id: eventIdMap.get(m.event_id_external)
+      }))
+      .filter(m => m.event_id)
+
+    const CHUNK_SIZE = 500
+    for (let i = 0; i < finalMarkets.length; i += CHUNK_SIZE) {
+      const chunk = finalMarkets.slice(i, i + CHUNK_SIZE)
+      const { error: marketError } = await supabase
+        .from('event_markets')
+        .upsert(chunk, { onConflict: 'external_id' })
+      
+      if (marketError) console.error('Bulk Market Error:', marketError)
     }
   }
 
