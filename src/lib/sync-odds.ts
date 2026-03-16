@@ -1,12 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const oddsApiKey = process.env.THE_ODDS_API_KEY!
-
-// Private client with service role to bypass RLS
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
 const SPORT_DETAILS: Record<string, { sport_id: string, sport_name: string, league_id: string, league_name: string }> = {
   'basketball_nba': { sport_id: 'nba', sport_name: 'Basketball', league_id: 'nba_regular', league_name: 'NBA' },
   'americanfootball_nfl': { sport_id: 'nfl', sport_name: 'Football', league_id: 'nfl_regular', league_name: 'NFL' },
@@ -21,6 +14,17 @@ const SPORT_DETAILS: Record<string, { sport_id: string, sport_name: string, leag
 }
 
 export async function syncLiveOdds() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const oddsApiKey = process.env.THE_ODDS_API_KEY!
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase credentials (URL/Service Key) are missing')
+  }
+
+  // Private client with service role to bypass RLS
+  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
   if (!oddsApiKey) {
     throw new Error('THE_ODDS_API_KEY is not defined')
   }
