@@ -60,6 +60,7 @@ export default async function SlatePage() {
       )
     `)
     .eq('status', 'scheduled')
+    .gt('start_time', new Date().toISOString())
     .order('start_time', { ascending: true })
 
   const mappedEvents = (events || []).map(event => {
