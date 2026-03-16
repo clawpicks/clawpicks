@@ -32,24 +32,49 @@ export async function settleEvent(
   // 3. Settle straight picks
   for (const pick of straightPicks || []) {
     let status: 'won' | 'lost' | 'push' = 'lost'
-    const selection = pick.event_markets.selection
+    const market = pick.event_markets
+    const selection = market.selection
 
-    if (selection === event.home_team) {
-      status = homeScore > awayScore ? 'won' : 'lost'
-    } else if (selection === event.away_team) {
-      status = awayScore > homeScore ? 'won' : 'lost'
-    } else if (selection === 'Draw') {
-      status = homeScore === awayScore ? 'won' : 'lost'
+    if (market.market_type === 'moneyline') {
+      if (selection === event.home_team) {
+        status = homeScore > awayScore ? 'won' : 'lost'
+      } else if (selection === event.away_team) {
+        status = awayScore > homeScore ? 'won' : 'lost'
+      } else if (selection === 'Draw') {
+        status = homeScore === awayScore ? 'won' : 'lost'
+      }
+    } else if (market.market_type === 'spread') {
+      // Parse point from selection "Team Name (+3.5)" or "Team Name (-3.5)"
+      const pointMatch = selection.match(/\(([-+]?\d+\.?\d*)\)/)
+      const point = pointMatch ? parseFloat(pointMatch[1]) : 0
+      
+      if (selection.startsWith(event.home_team)) {
+        const adjustedScore = homeScore + point
+        if (adjustedScore > awayScore) status = 'won'
+        else if (adjustedScore < awayScore) status = 'lost'
+        else status = 'push'
+      } else if (selection.startsWith(event.away_team)) {
+        const adjustedScore = awayScore + point
+        if (adjustedScore > homeScore) status = 'won'
+        else if (adjustedScore < homeScore) status = 'lost'
+        else status = 'push'
+      }
     }
 
     await supabase.from('picks').update({ status }).eq('id', pick.id)
 
-    // Update bankroll if won
+    // Update bankroll if won or push
     if (status === 'won') {
-      const payout = pick.stake * Number(pick.event_markets.odds)
+      const payout = pick.stake * Number(market.odds)
       await supabase.rpc('increment_bankroll', { 
         target_agent_id: pick.agent_id, 
         amount: payout 
+      })
+    } else if (status === 'push') {
+      // Return the stake if it's a push
+      await supabase.rpc('increment_bankroll', { 
+        target_agent_id: pick.agent_id, 
+        amount: pick.stake 
       })
     }
   }
@@ -57,7 +82,7 @@ export async function settleEvent(
   // 4. Settle parlay legs
   const { data: legs, error: legsError } = await supabase
     .from('parlay_legs')
-    .select('*')
+    .select('*, event_markets(*)') // Join to get market_type
     .eq('event_id', eventId)
     .eq('status', 'open')
 
@@ -65,13 +90,32 @@ export async function settleEvent(
 
   for (const leg of legs || []) {
     let status: 'won' | 'lost' | 'push' = 'lost'
+    const market = leg.event_markets
+    const selection = leg.selection
     
-    if (leg.selection === event.home_team) {
-      status = homeScore > awayScore ? 'won' : 'lost'
-    } else if (leg.selection === event.away_team) {
-      status = awayScore > homeScore ? 'won' : 'lost'
-    } else if (leg.selection === 'Draw') {
-      status = homeScore === awayScore ? 'won' : 'lost'
+    if (market.market_type === 'moneyline') {
+      if (selection === event.home_team) {
+        status = homeScore > awayScore ? 'won' : 'lost'
+      } else if (selection === event.away_team) {
+        status = awayScore > homeScore ? 'won' : 'lost'
+      } else if (selection === 'Draw') {
+        status = homeScore === awayScore ? 'won' : 'lost'
+      }
+    } else if (market.market_type === 'spread') {
+      const pointMatch = selection.match(/\(([-+]?\d+\.?\d*)\)/)
+      const point = pointMatch ? parseFloat(pointMatch[1]) : 0
+      
+      if (selection.startsWith(event.home_team)) {
+        const adjustedScore = homeScore + point
+        if (adjustedScore > awayScore) status = 'won'
+        else if (adjustedScore < awayScore) status = 'lost'
+        else status = 'push'
+      } else if (selection.startsWith(event.away_team)) {
+        const adjustedScore = awayScore + point
+        if (adjustedScore > homeScore) status = 'won'
+        else if (adjustedScore < homeScore) status = 'lost'
+        else status = 'push'
+      }
     }
 
     await supabase.from('parlay_legs').update({ status }).eq('id', leg.id)
