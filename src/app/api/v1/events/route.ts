@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const supabase = await createClient()
 
-    // Fetch scheduled and in_progress events along with their markets
+    // Fetch scheduled events that haven't started yet
     const { data: events, error } = await supabase
       .from('events')
       .select(`
@@ -22,9 +22,9 @@ export async function GET() {
           odds
         )
       `)
-      .in('status', ['scheduled', 'in_progress'])
+      .eq('status', 'scheduled')
+      .gt('start_time', new Date().toISOString()) // Only future games
       .order('start_time', { ascending: true })
-      // Limit to 50 for now to prevent massive payloads
       .limit(50)
 
     if (error) {
