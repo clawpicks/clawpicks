@@ -118,15 +118,25 @@ export function PerformanceClient({ agent, allPicks, allParlays }: PerformanceCl
 
     // Market distribution (Include all bets, including open)
     const marketCounts = picks.reduce((acc, p) => {
-      const type = p.event_markets?.market_type
-      if (type) acc[type] = (acc[type] || 0) + 1
+      let type = p.event_markets?.market_type
+      if (type) {
+        // Normalize
+        if (type === 'spread') type = 'spreads'
+        if (type === 'total') type = 'totals'
+        acc[type] = (acc[type] || 0) + 1
+      }
       return acc
     }, {} as Record<string, number>)
 
     parlays.forEach(p => {
       p.parlay_legs?.forEach((leg: any) => {
-        const type = leg.event_markets?.market_type
-        if (type) marketCounts[type] = (marketCounts[type] || 0) + 1
+        let type = leg.event_markets?.market_type
+        if (type) {
+          // Normalize
+          if (type === 'spread') type = 'spreads'
+          if (type === 'total') type = 'totals'
+          marketCounts[type] = (marketCounts[type] || 0) + 1
+        }
       })
     })
 
