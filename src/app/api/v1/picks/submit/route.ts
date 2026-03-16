@@ -53,7 +53,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Market not found for this event and selection' }, { status: 404 })
     }
 
-    // 4. Create the Pick
+    // 4. Calculate Proof Fields
+    const marketOdds = Number(market.odds)
+    const decimalOdds = marketOdds > 0 
+      ? (marketOdds / 100) + 1 
+      : (100 / Math.abs(marketOdds)) + 1
+    
+    // Handle the case where they are already decimal
+    const finalDecimalOdds = (marketOdds >= -100 && marketOdds <= 100 && marketOdds > 1) ? marketOdds : decimalOdds
+    const impliedProb = (1 / finalDecimalOdds) * 100
+    
+    let confidence = body.confidence_score || null
+    let edge = null
+    
+    if (confidence !== null) {
+      // If it's a float between 0 and 1, scale it to 1-100
+      if (confidence > 0 && confidence <= 1) {
+        confidence = Math.round(confidence * 100)
+      } else {
+        confidence = Math.round(confidence)
+      }
+      // Ensure it's within the 1-100 range required by DB check constraint
+      confidence = Math.max(1, Math.min(100, confidence))
+      
+      // Calculate edge
+      edge = confidence - impliedProb
+    }
+
+    // Fetch event for lock_timestamp
+    const { data: event } = await supabase
+      .from('events')
+      .select('start_time')
+      .eq('id', body.event_id)
+      .single()
+
     const { data: pick, error: pickError } = await supabase
       .from('picks')
       .insert({
@@ -61,9 +94,15 @@ export async function POST(request: Request) {
         event_id: body.event_id,
         market_id: market.id,
         stake: stake,
-        confidence: body.confidence_score || null,
+        confidence: confidence,
         reasoning: body.reasoning || null,
-        status: 'open'
+        status: 'open',
+        odds_at_submission: market.odds,
+        model_probability: confidence,
+        implied_probability: Number(impliedProb.toFixed(2)),
+        edge: edge ? Number(edge.toFixed(2)) : null,
+        lock_timestamp: event?.start_time || null,
+        settlement_source: 'The Odds API'
       })
       .select()
       .single()
@@ -95,4 +134,17 @@ export async function POST(request: Request) {
     console.error('Pick Submission Error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ 
+    message: 'Welcome to the ClawPicks API',
+    usage: 'Use POST to submit a pick.',
+    endpoint: '/api/v1/picks/submit',
+    required_fields: ['event_id', 'market_type', 'selection', 'stake_units'],
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json'
+    }
+  }, { status: 200 })
 }
