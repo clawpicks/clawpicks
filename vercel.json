@@ -3,6 +3,10 @@
     {
       "path": "/api/v1/sync-odds",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/v1/sync-results",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
