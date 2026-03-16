@@ -1,56 +1,17 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle2, TrendingUp, Users, Activity, Target, ShieldCheck } from 'lucide-react'
+import { CheckCircle2, TrendingUp, Users, Activity, Target, ShieldCheck, ShieldAlert, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AgentChart } from '@/components/AgentChart'
 import { createClient } from '@/lib/supabase/server'
 import { FollowButton } from '@/components/agent/FollowButton'
 import { TailPicksButton } from '@/components/agent/TailPicksButton'
+import { PerformanceClient } from '@/components/agent/PerformanceClient'
 import { cn } from '@/lib/utils'
 
-const generateBankrollData = (startBankroll: number, endBankroll: number, createdAt: string) => {
-  const data = []
-  
-  // Calculate days since creation
-  const start = new Date(createdAt).getTime()
-  const now = new Date().getTime()
-  let daysDiff = Math.floor((now - start) / (1000 * 60 * 60 * 24))
-  
-  // Always show at least Day 1
-  if (daysDiff < 1) daysDiff = 1
-  
-  // If we only have 1 day, just show the line from start to end
-  const steps = daysDiff
-  const diff = (endBankroll - startBankroll) / steps
-  
-  let current = startBankroll
-  
-  for (let i = 0; i <= steps; i++) {
-    data.push({
-      day: `Day ${i === 0 ? 1 : i}`,
-      bankroll: Number(current.toFixed(2))
-    })
-    
-    // Add variance if it's not the first or last day
-    if (i !== 0 && i !== steps) {
-       current += diff + (Math.random() * 20 - 10)
-    } else if (i === 0) {
-       current += diff // Move to next step straight
-    }
-  }
-  
-  // Lock exact final bankroll to the last day
-  data[data.length - 1].bankroll = endBankroll
-  
-  // Ensure unique days if day 0 and day 1 overlapped in name
-  if (data.length > 1 && data[0].day === data[1].day) {
-      data[0].day = 'Start'
-  }
 
-  return data
-}
 
 
 export default async function AgentProfile({ params }: { params: Promise<{ id: string }> }) {
@@ -73,7 +34,8 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
       ),
       event_markets (
         odds,
-        selection
+        selection,
+        market_type
       ),
       edge,
       model_probability
@@ -91,6 +53,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
         selection,
         odds,
         status,
+        event_markets (
+          market_type
+        ),
         events (
           home_team,
           away_team,
@@ -118,7 +83,56 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   const totalOpenCount = openPicks.length + openParlays.length
   const totalSettledCount = settledPicks.length + settledParlays.length
 
-  const bankrollData = generateBankrollData(1000, agent.bankroll, agent.created_at)
+
+
+
+  
+  // Real Calibration (Wins by confidence bucket)
+  const calibration = settledPicks.reduce((acc, p) => {
+    const bucket = p.confidence_score >= 90 ? '90-100%' : p.confidence_score >= 75 ? '75-89%' : '50-74%'
+    if (!acc[bucket]) acc[bucket] = { total: 0, won: 0 }
+    acc[bucket].total++
+    if (p.status === 'won') acc[bucket].won++
+    return acc
+  }, {} as Record<string, { total: number, won: number }>)
+
+  const getCalibValue = (bucket: string) => {
+    const b = calibration[bucket]
+    return b ? Math.round((b.won / b.total) * 100) : 0
+  }
+
+  // Fav vs Dog Split
+  const favDogSplit = settledPicks.reduce((acc, p) => {
+    const type = p.odds_at_submission < 2.0 ? 'Favorite' : 'Underdog'
+    if (!acc[type]) acc[type] = { total: 0, won: 0 }
+    acc[type].total++
+    if (p.status === 'won') acc[type].won++
+    return acc
+  }, {} as Record<string, { total: number, won: number }>)
+
+  const getSplitWinRate = (type: string) => {
+    const s = favDogSplit[type]
+    return s ? Math.round((s.won / s.total) * 100) : 0
+  }
+
+  // Monthly Returns Matrix
+  const monthlyReturns = [...settledPicks, ...settledParlays].reduce((acc, p) => {
+    const date = new Date(p.created_at)
+    const month = date.toLocaleString('en-US', { month: 'short' })
+    const year = date.getFullYear()
+    const key = `${month} ${year}`
+    
+    if (!acc[key]) acc[key] = { stake: 0, profit: 0 }
+    acc[key].stake += p.stake || 0
+    if (p.status === 'won') {
+      acc[key].profit += (p.to_win || (p.stake * (p.odds_at_submission - 1)))
+    } else if (p.status === 'lost') {
+      acc[key].profit -= p.stake
+    }
+    return acc
+  }, {} as Record<string, { stake: number, profit: number }>)
+
+  const sortedMonths = Object.keys(monthlyReturns).sort((a,b) => new Date(b).getTime() - new Date(a).getTime())
   
   // Check if logged in user is following
   const { data: { user } } = await supabase.auth.getUser()
@@ -143,10 +157,10 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
          <div className="flex-1 w-full">
            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
              <div>
-               <div className="flex items-center gap-3 mb-2">
-                 <h1 className="text-4xl font-extrabold tracking-tight">{agent.name}</h1>
-                 <CheckCircle2 className="h-6 w-6 text-primary" />
-               </div>
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-4xl font-extrabold tracking-tight">{agent.name}</h1>
+                  <CheckCircle2 className="h-6 w-6 text-primary" />
+                </div>
                <p className="text-xl text-muted-foreground max-w-2xl">{agent.bio}</p>
              </div>
              <div className="flex gap-3 shrink-0">
@@ -155,37 +169,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
              </div>
            </div>
            
-            <div className="flex flex-wrap gap-x-12 gap-y-6 mt-8 border-t border-border/50 pt-8">
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total ROI</p>
-                <p className={`text-3xl font-black tracking-tight ${(agent.roi || 0) > 0 ? 'text-primary' : (agent.roi || 0) < 0 ? 'text-destructive' : 'text-foreground'}`}>
-                  {(agent.roi || 0) > 0 ? '+' : ''}{Number(agent.roi || 0).toFixed(1)}%
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Win Rate</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/90">{Number(agent.win_rate).toFixed(1)}%</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Profit</p>
-                <p className={`text-3xl font-black tracking-tight ${(agent.profit_units || 0) > 0 ? 'text-primary' : 'text-foreground/90'}`}>
-                  {(agent.profit_units || 0) > 0 ? '+' : ''}{Number(agent.profit_units || 0).toFixed(1)} U
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Avg Odds</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/90">{Number(agent.avg_odds || 0).toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Max Drawdown</p>
-                <p className="text-3xl font-black tracking-tight text-destructive/80">-{Number(agent.max_drawdown || 0).toFixed(1)}%</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Settled Picks</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/70">{agent.settled_picks || 0}</p>
-             </div>
-            </div>
-           </div>
+          </div>
          </div>
       {/* Tabs Layout */}
       <Tabs defaultValue="performance" className="w-full">
@@ -197,79 +181,8 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
           <TabsTrigger value="history" className="data-[state=active]:bg-card/80">History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="performance" className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 bg-card/30 border-border/30 backdrop-blur">
-            <CardHeader>
-              <CardTitle>Bankroll Growth (30 Days)</CardTitle>
-              <CardDescription>Starting Bankroll: 1000 Units</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px] w-full mt-2">
-                <AgentChart data={bankrollData} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card className="bg-card/30 border-border/30 backdrop-blur">
-              <CardHeader className="pb-2">
-                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Market Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="font-bold">Moneyline</span>
-                      <span className="text-muted-foreground">100%</span>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: '100%' }}></div>
-                    </div>
-                  </div>
-                  <div className="opacity-30">
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="font-bold text-muted-foreground">Spread (Coming Soon)</span>
-                      <span className="text-muted-foreground">0%</span>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary/20" style={{ width: '0%' }}></div>
-                    </div>
-                  </div>
-                  <div className="opacity-30">
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="font-bold text-muted-foreground">Total / O.U (Coming Soon)</span>
-                      <span className="text-muted-foreground">0%</span>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary/20" style={{ width: '0%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-card/30 border-border/30 backdrop-blur">
-              <CardHeader className="pb-2">
-                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Timeframe Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-background/40 rounded-lg border border-border/50">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">7D ROI</p>
-                    <p className={cn("text-xl font-black", (agent.last_7d_roi || 0) > 0 ? "text-primary" : "text-foreground")}>
-                      {(agent.last_7d_roi || 0) > 0 ? '+' : ''}{Number(agent.last_7d_roi || 0).toFixed(1)}%
-                    </p>
-                  </div>
-                  <div className="p-3 bg-background/40 rounded-lg border border-border/50">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">30D ROI</p>
-                    <p className={cn("text-xl font-black", (agent.last_30d_roi || 0) > 0 ? "text-primary" : "text-foreground")}>
-                      {(agent.last_30d_roi || 0) > 0 ? '+' : ''}{Number(agent.last_30d_roi || 0).toFixed(1)}%
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <TabsContent value="performance">
+          <PerformanceClient agent={agent} allPicks={picks || []} allParlays={parlays || []} />
         </TabsContent>
 
         <TabsContent value="open-picks" className="space-y-4">
