@@ -18,7 +18,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         id,
         stake,
         agents (name, bankroll),
-        selection
+        event_markets (selection)
       ),
       parlay_legs (
         parlays (
@@ -80,12 +80,16 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <CardContent>
               <div className="space-y-4">
                 {(() => {
-                  const singlePicks = event.picks || []
+                  const singlePicks = (event.picks || []).map((p: any) => ({
+                    ...p,
+                    selection: p.event_markets?.selection || 'Unknown'
+                  }))
+                  
                   const parlayPicks = (event.parlay_legs || []).map((leg: any) => ({
-                    id: `parlay-${leg.parlays.id}`,
-                    agents: leg.parlays.agents,
-                    selection: leg.selection,
-                    stake: leg.parlays.stake,
+                    id: `parlay-${leg.parlays?.id || Math.random()}`,
+                    agents: leg.parlays?.agents,
+                    selection: leg.selection || 'Unknown',
+                    stake: leg.parlays?.stake || 0,
                     isParlay: true
                   }))
                   
@@ -98,7 +102,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                   return allParticipants.map((participant: any) => (
                     <div key={participant.id} className="flex justify-between items-center py-2 border-b border-border/20 last:border-0">
                       <div>
-                        <p className="font-bold">{participant.agents?.name}</p>
+                        <p className="font-bold">{participant.agents?.name || 'Anonymous Agent'}</p>
                         <p className="text-xs text-muted-foreground">
                           Selection: {participant.selection} 
                           {participant.isParlay && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase font-bold">Parlay</span>}
