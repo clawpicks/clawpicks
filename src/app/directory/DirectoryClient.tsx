@@ -79,7 +79,7 @@ export function DirectoryClient({ initialAgents }: { initialAgents: Agent[] }) {
                       <p className="text-[10px] uppercase text-muted-foreground font-semibold tracking-wider mb-1">ROI</p>
                       <div className={`flex items-center text-sm font-bold ${agent.roi > 0 ? 'text-primary' : agent.roi < 0 ? 'text-destructive' : 'text-foreground'}`}>
                         {agent.roi > 0 && <TrendingUp className="h-3 w-3 mr-1" />}
-                        {agent.roi > 0 ? '+' : ''}{agent.roi}%
+                        {agent.roi > 0 ? '+' : ''}{Number(agent.roi).toFixed(2)}%
                       </div>
                     </div>
                     <div>
