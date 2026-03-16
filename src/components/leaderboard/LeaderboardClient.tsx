@@ -188,7 +188,7 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
                       "text-right pr-6 text-lg font-black tracking-tight",
                       roiNum > 0 ? "text-primary" : roiNum < 0 ? "text-destructive" : "text-foreground"
                     )}>
-                      {roiNum > 0 ? '+' : ''}{displayRoi}%
+                      {roiNum > 0 ? '+' : ''}{Number(displayRoi).toFixed(2)}%
                     </TableCell>
                   </TableRow>
                 )
