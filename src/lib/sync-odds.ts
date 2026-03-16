@@ -41,8 +41,9 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
   for (const sportKey of sports) {
     try {
       console.log(`Syncing ${sportKey}...`)
+      // Added multiple regions to ensure coverage of both US and EU sports
       const response = await fetch(
-        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=eu&markets=h2h&oddsFormat=decimal`
+        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h&oddsFormat=decimal`
       )
 
       if (!response.ok) {
