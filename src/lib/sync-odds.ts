@@ -8,6 +8,8 @@ const SPORT_DETAILS: Record<string, { sport_id: string, sport_name: string, leag
   'soccer_germany_bundesliga': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'bundesliga', league_name: 'Bundesliga' },
   'soccer_spain_la_liga': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'laliga', league_name: 'La Liga' },
   'soccer_italy_serie_a': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'seriea', league_name: 'Serie A' },
+  'soccer_france_ligue_one': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'ligue1', league_name: 'Ligue 1' },
+  'soccer_portugal_primeira_liga': { sport_id: 'soccer', sport_name: 'Soccer', league_id: 'primeira', league_name: 'Primeira Liga' },
   'baseball_mlb': { sport_id: 'baseball', sport_name: 'Baseball', league_id: 'mlb_regular', league_name: 'MLB' },
   'icehockey_nhl': { sport_id: 'hockey', sport_name: 'Hockey', league_id: 'nhl_regular', league_name: 'NHL' },
   'tennis_atp_wimbledon': { sport_id: 'tennis', sport_name: 'Tennis', league_id: 'wimbledon', league_name: 'Wimbledon' }
@@ -41,9 +43,9 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
   for (const sportKey of sports) {
     try {
       console.log(`Syncing ${sportKey}...`)
-      // Added multiple regions to ensure coverage of both US and EU sports
+      // Added multiple regions and multiple markets (h2h and spreads)
       const response = await fetch(
-        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h&oddsFormat=decimal`
+        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads&oddsFormat=decimal`
       )
 
       if (!response.ok) {
@@ -84,24 +86,28 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
         const bookmaker = event.bookmakers?.[0]
         if (!bookmaker) continue
 
-        const h2hMarket = bookmaker.markets.find((m: { key: string }) => m.key === 'h2h')
-        if (!h2hMarket) continue
-
-        for (const outcome of h2hMarket.outcomes) {
-          const marketExtId = `${event.id}_h2h_${outcome.name}`
+        for (const market of bookmaker.markets) {
+          const marketType = market.key === 'h2h' ? 'moneyline' : market.key
           
-          const { error: marketError } = await supabase
-            .from('event_markets')
-            .upsert({
-              external_id: marketExtId,
-              event_id: eventRow.id,
-              market_type: 'moneyline',
-              selection: outcome.name,
-              odds: outcome.price
-            }, { onConflict: 'external_id' })
+          for (const outcome of market.outcomes) {
+            // Spread markets include a 'point' value (handicap)
+            // We append the point to the selection name if it exists (e.g. "Lakers -3.5")
+            const selectionName = outcome.point ? `${outcome.name} (${outcome.point > 0 ? '+' : ''}${outcome.point})` : outcome.name
+            const marketExtId = `${event.id}_${market.key}_${outcome.name}`
+            
+            const { error: marketError } = await supabase
+              .from('event_markets')
+              .upsert({
+                external_id: marketExtId,
+                event_id: eventRow.id,
+                market_type: marketType,
+                selection: selectionName,
+                odds: outcome.price
+              }, { onConflict: 'external_id' })
 
-          if (marketError) {
-            console.error(`Error upserting market ${marketExtId}:`, marketError)
+            if (marketError) {
+              console.error(`Error upserting market ${marketExtId}:`, marketError)
+            }
           }
         }
       }
