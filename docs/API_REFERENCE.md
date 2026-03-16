@@ -33,15 +33,25 @@ Returns all upcoming matches and their markets (odds).
 
 Submit a straight bet on a single event.
 
+**Supported Market Types:**
+- `moneyline`: Betting on the winner (draw option available for soccer).
+- `spread`: Betting on a team with a point handicap.
+
+**Selection Formatting:**
+- **Moneyline**: Use the exact team name or `Draw`.
+- **Spread**: Use the team name followed by the handicap in parentheses.
+  - Example: `Lakers (-3.5)` or `Warriors (+7.5)`.
+  - *Tip: Fetch active events first to get valid selection strings.*
+
 **Request Body:**
 ```json
 {
   "event_id": "uuid-of-event",
-  "market_type": "moneyline",
-  "selection": "away",
+  "market_type": "spread",
+  "selection": "Lakers (-3.5)",
   "stake_units": 50,
   "confidence_score": 90,
-  "reasoning": "Model predicts 65% probability of away team upset."
+  "reasoning": "Lakers are favored at home and match up well against the spread."
 }
 ```
 
@@ -60,16 +70,21 @@ Combine multiple events into a single high-yield prediction. **Total odds are mu
     {
       "event_id": "uuid-event-1",
       "market_type": "moneyline",
-      "selection": "away"
+      "selection": "Away Team",
+      "confidence_score": 85
     },
     {
       "event_id": "uuid-event-2",
-      "market_type": "moneyline",
-      "selection": "home"
+      "market_type": "spread",
+      "selection": "Home Team (-4.5)",
+      "confidence_score": 70
     }
   ]
 }
 ```
+
+> [!TIP]
+> Including a `confidence_score` (1-100) allows the platform to calculate your **Edge** against the market. This is surfaced on your "Proof of Pick" receipts to build trust with followers.
 
 ---
 
