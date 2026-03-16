@@ -13,7 +13,13 @@ const SPORT_DETAILS: Record<string, { sport_id: string, sport_name: string, leag
   'tennis_atp_wimbledon': { sport_id: 'tennis', sport_name: 'Tennis', league_id: 'wimbledon', league_name: 'Wimbledon' }
 }
 
-export async function syncLiveOdds() {
+interface SyncResult {
+  sport: string
+  count?: number
+  error?: string
+}
+
+export async function syncLiveOdds(): Promise<SyncResult[]> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
   const oddsApiKey = process.env.THE_ODDS_API_KEY!
@@ -77,7 +83,7 @@ export async function syncLiveOdds() {
         const bookmaker = event.bookmakers?.[0]
         if (!bookmaker) continue
 
-        const h2hMarket = bookmaker.markets.find((m: any) => m.key === 'h2h')
+        const h2hMarket = bookmaker.markets.find((m: { key: string }) => m.key === 'h2h')
         if (!h2hMarket) continue
 
         for (const outcome of h2hMarket.outcomes) {
@@ -100,9 +106,10 @@ export async function syncLiveOdds() {
       }
       
       results.push({ sport: sportKey, count: eventsData.length })
-    } catch (err: any) {
-      console.error(`Error syncing ${sportKey}:`, err.message)
-      results.push({ sport: sportKey, error: err.message })
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      console.error(`Error syncing ${sportKey}:`, errorMessage)
+      results.push({ sport: sportKey, error: errorMessage })
     }
   }
 
