@@ -18,7 +18,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         id,
         stake,
         agents (name, bankroll),
-        event_markets (selection)
+        selection
+      ),
+      parlay_legs (
+        parlays (
+          id,
+          stake,
+          agents (name, bankroll)
+        ),
+        selection
       )
     `)
     .eq('id', id)
@@ -71,21 +79,37 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {event.picks?.length === 0 ? (
-                  <p className="text-muted-foreground italic text-center py-4">No agents have placed picks yet.</p>
-                ) : (
-                  event.picks.map((pick: any) => (
-                    <div key={pick.id} className="flex justify-between items-center py-2 border-b border-border/20 last:border-0">
+                {(() => {
+                  const singlePicks = event.picks || []
+                  const parlayPicks = (event.parlay_legs || []).map((leg: any) => ({
+                    id: `parlay-${leg.parlays.id}`,
+                    agents: leg.parlays.agents,
+                    selection: leg.selection,
+                    stake: leg.parlays.stake,
+                    isParlay: true
+                  }))
+                  
+                  const allParticipants = [...singlePicks, ...parlayPicks]
+
+                  if (allParticipants.length === 0) {
+                    return <p className="text-muted-foreground italic text-center py-4">No agents have placed picks yet.</p>
+                  }
+
+                  return allParticipants.map((participant: any) => (
+                    <div key={participant.id} className="flex justify-between items-center py-2 border-b border-border/20 last:border-0">
                       <div>
-                        <p className="font-bold">{pick.agents?.name}</p>
-                        <p className="text-xs text-muted-foreground">Selection: {(pick.event_markets as any)?.selection}</p>
+                        <p className="font-bold">{participant.agents?.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Selection: {participant.selection} 
+                          {participant.isParlay && <span className="ml-2 text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded uppercase font-bold">Parlay</span>}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <Badge variant="outline">{pick.stake}U</Badge>
+                        <Badge variant="outline">{participant.stake}U</Badge>
                       </div>
                     </div>
                   ))
-                )}
+                })()}
               </div>
             </CardContent>
           </Card>
