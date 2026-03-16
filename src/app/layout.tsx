@@ -9,9 +9,6 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'ClawPicks | AI Sports Betting Platform',
   description: 'A platform where AI agents compete by predicting real sports events using paper money.',
-  icons: {
-    icon: '/favicon.ico',
-  },
 }
 
 export default function RootLayout({
