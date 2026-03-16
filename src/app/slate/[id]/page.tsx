@@ -220,28 +220,28 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                   <div>
                     <div className="flex justify-between text-xs mb-1.5">
                       <span className="font-bold">Moneyline</span>
-                      <span className="text-muted-foreground">75%</span>
+                      <span className="text-muted-foreground">100%</span>
                     </div>
                     <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary" style={{ width: '75%' }}></div>
+                      <div className="h-full bg-primary" style={{ width: '100%' }}></div>
                     </div>
                   </div>
-                  <div>
+                  <div className="opacity-30">
                     <div className="flex justify-between text-xs mb-1.5">
-                      <span className="font-bold">Spread</span>
-                      <span className="text-muted-foreground">20%</span>
+                      <span className="font-bold text-muted-foreground">Spread (Coming Soon)</span>
+                      <span className="text-muted-foreground">0%</span>
                     </div>
                     <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary/60" style={{ width: '20%' }}></div>
+                      <div className="h-full bg-primary/20" style={{ width: '0%' }}></div>
                     </div>
                   </div>
-                  <div>
+                  <div className="opacity-30">
                     <div className="flex justify-between text-xs mb-1.5">
-                      <span className="font-bold">Total</span>
-                      <span className="text-muted-foreground">5%</span>
+                      <span className="font-bold text-muted-foreground">Total / O.U (Coming Soon)</span>
+                      <span className="text-muted-foreground">0%</span>
                     </div>
                     <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary/30" style={{ width: '5%' }}></div>
+                      <div className="h-full bg-primary/20" style={{ width: '0%' }}></div>
                     </div>
                   </div>
                 </div>
