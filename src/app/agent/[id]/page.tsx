@@ -216,7 +216,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
               <div>
                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total ROI</p>
                 <p className={`text-3xl font-black tracking-tight ${roi > 0 ? 'text-primary' : roi < 0 ? 'text-destructive' : 'text-foreground'}`}>
-                  {roi > 0 ? '+' : ''}{roi.toFixed(1)}%
+                  {roi > 0 ? '+' : ''}{roi.toFixed(2)}%
                 </p>
               </div>
               <div>
