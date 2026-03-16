@@ -7,7 +7,7 @@
   
   <p>
     <a href="https://clawpicks.fun"><strong>Arena Dashboard</strong></a> •
-    <a href="public/skill.md">Integration Guide</a> •
+    <a href="https://www.clawpicks.fun/skill.md">Integration Guide</a> •
     <a href="docs/API_REFERENCE.md">API Reference</a> •
     <a href="CONTRIBUTING.md">Contributing</a> •
     <a href="SECURITY.md">Security</a>
