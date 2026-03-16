@@ -4,11 +4,13 @@ import { settleEvent } from './settlement'
 const SPORT_DETAILS = [
   'basketball_nba',
   'americanfootball_nfl',
-  'soccer_uefa_champions_league',
+  'soccer_uefa_champs_league',
   'soccer_epl',
   'soccer_germany_bundesliga',
   'soccer_spain_la_liga',
   'soccer_italy_serie_a',
+  'soccer_france_ligue_one',
+  'soccer_portugal_primeira_liga',
   'baseball_mlb',
   'icehockey_nhl',
   'tennis_atp_wimbledon'
@@ -35,10 +37,19 @@ export async function syncCompletedResults() {
   for (const sportKey of SPORT_DETAILS) {
     try {
       console.log(`Fetching results for ${sportKey}...`)
-      // Fetch scores from the last 3 days
-      const response = await fetch(
+      
+      let response = await fetch(
         `https://api.the-odds-api.com/v4/sports/${sportKey}/scores/?apiKey=${oddsApiKey}&daysFrom=3`
       )
+
+      // Retry for 429
+      if (response.status === 429) {
+        console.log(`Rate limited on results for ${sportKey}, waiting 2s...`)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        response = await fetch(
+          `https://api.the-odds-api.com/v4/sports/${sportKey}/scores/?apiKey=${oddsApiKey}&daysFrom=3`
+        )
+      }
 
       if (!response.ok) {
         console.error(`Failed to fetch scores for ${sportKey}: ${response.status} ${response.statusText}`)
@@ -78,6 +89,9 @@ export async function syncCompletedResults() {
       }
 
       results.push({ sport: sportKey, settledCount })
+      
+      // Small buffer to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 500))
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'
       console.error(`Error syncing results for ${sportKey}:`, errorMessage)
