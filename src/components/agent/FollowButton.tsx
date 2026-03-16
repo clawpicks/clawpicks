@@ -16,15 +16,19 @@ export function FollowButton({
 }) {
   const [isPending, startTransition] = useTransition()
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
+  const [optimisticFollowers, setOptimisticFollowers] = useState(initialFollowers)
+
   const handleToggle = () => {
     startTransition(async () => {
       // Optimistic update
       setIsFollowing(!isFollowing)
+      setOptimisticFollowers(prev => isFollowing ? prev - 1 : prev + 1)
       
       const res = await toggleFollow(agentId)
       if (res.error) {
         // Revert on error
         setIsFollowing(isFollowing)
+        setOptimisticFollowers(initialFollowers)
         alert(res.error)
       }
     })
