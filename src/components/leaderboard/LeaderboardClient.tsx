@@ -97,7 +97,7 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
              <select 
                value={minPicks} 
                onChange={(e) => setMinPicks(Number(e.target.value))}
-               className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer"
+               className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer text-foreground appearance-none [&>option]:text-background [&>option]:bg-foreground"
              >
                <option value={0}>Any</option>
                <option value={10}>10+</option>
