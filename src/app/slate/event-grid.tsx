@@ -32,17 +32,25 @@ function EventRow({ event }: { event: any }) {
         
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2.5 group/team">
-            <div className="w-5 h-5 shrink-0 rounded-sm bg-[#1a384c] flex items-center justify-center text-[10px] font-black text-white/50 border border-white/5 uppercase">
-              {event.away.substring(0, 2)}
-            </div>
+            {event.awayLogo ? (
+              <img src={event.awayLogo} alt={event.away} className="w-5 h-5 shrink-0 object-contain rounded-sm" />
+            ) : (
+              <div className="w-5 h-5 shrink-0 rounded-sm bg-[#1a384c] flex items-center justify-center text-[10px] font-black text-white/50 border border-white/5 uppercase">
+                {event.away.substring(0, 2)}
+              </div>
+            )}
             <span className="font-bold text-slate-200 text-sm whitespace-nowrap overflow-hidden text-ellipsis group-hover/team:text-primary transition-colors">
               {event.away}
             </span>
           </div>
           <div className="flex items-center gap-2.5 group/team">
-            <div className="w-5 h-5 shrink-0 rounded-sm bg-[#1a384c] flex items-center justify-center text-[10px] font-black text-white/50 border border-white/5 uppercase">
-              {event.home.substring(0, 2)}
-            </div>
+            {event.homeLogo ? (
+              <img src={event.homeLogo} alt={event.home} className="w-5 h-5 shrink-0 object-contain rounded-sm" />
+            ) : (
+              <div className="w-5 h-5 shrink-0 rounded-sm bg-[#1a384c] flex items-center justify-center text-[10px] font-black text-white/50 border border-white/5 uppercase">
+                {event.home.substring(0, 2)}
+              </div>
+            )}
             <span className="font-bold text-slate-200 text-sm whitespace-nowrap overflow-hidden text-ellipsis group-hover/team:text-primary transition-colors">
               {event.home}
             </span>
@@ -51,26 +59,26 @@ function EventRow({ event }: { event: any }) {
       </div>
 
       {/* Right side: Odds Boxes */}
-      <div className="flex-grow flex items-center md:justify-end gap-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10">
-          <div className="flex flex-col min-w-[130px] w-full max-w-[150px] gap-1">
-            <div className="text-[9px] text-center text-slate-600 font-black uppercase tracking-widest mb-1">Moneyline</div>
-            <button className="flex justify-between items-center bg-[#1a384c]/50 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
+      <div className="flex-grow flex items-center md:justify-end gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10 snap-x">
+          <div className="flex flex-col w-[110px] sm:w-[130px] shrink-0 gap-1 snap-start">
+            <div className="text-[9px] text-center text-slate-500 font-black uppercase tracking-wider mb-1">Moneyline</div>
+            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter group-hover/btn:text-slate-400">Away</span>
               <span className="text-sm font-black text-emerald-400">{Number(event.odds.away).toFixed(2)}</span>
             </button>
-            <button className="flex justify-between items-center bg-[#1a384c]/50 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
+            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter group-hover/btn:text-slate-400">Home</span>
               <span className="text-sm font-black text-emerald-400">{Number(event.odds.home).toFixed(2)}</span>
             </button>
           </div>
 
-          <div className={cn("flex flex-col min-w-[130px] w-full max-w-[150px] gap-1 transition-opacity", !event.spread.home && "opacity-20")}>
-            <div className="text-[9px] text-center text-slate-600 font-black uppercase tracking-widest mb-1">Spread</div>
-            <button className="flex justify-between items-center bg-[#1a384c]/50 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
+          <div className={cn("flex flex-col w-[90px] sm:w-[110px] shrink-0 gap-1 snap-start transition-opacity", !event.spread.home && "opacity-20")}>
+            <div className="text-[9px] text-center text-slate-500 font-black uppercase tracking-wider mb-1">Spread</div>
+            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{event.spread.away?.selection || '-'}</span>
               <span className="text-sm font-black text-emerald-400">{event.spread.away ? Number(event.spread.away.odds).toFixed(2) : '-'}</span>
             </button>
-            <button className="flex justify-between items-center bg-[#1a384c]/50 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
+            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{event.spread.home?.selection || '-'}</span>
               <span className="text-sm font-black text-emerald-400">{event.spread.home ? Number(event.spread.home.odds).toFixed(2) : '-'}</span>
             </button>
@@ -110,26 +118,24 @@ export function EventGrid({ events }: { events: any[] }) {
       <Tabs defaultValue="all" className="w-full">
         <div className="flex flex-col gap-4">
           {/* League Inline Navigation */}
-          <div className="relative border-b border-[#22252e] mb-4">
-            <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-3">
-              <TabsList className="bg-transparent h-auto p-0 flex justify-start gap-2 w-full pr-4">
+          <div className="relative border-b border-[#22252e] mb-4 pb-3">
+            <TabsList className="bg-transparent h-auto p-0 flex flex-wrap justify-start gap-2 w-full">
+              <TabsTrigger 
+                value="all"
+                className="bg-[#1a384c]/30 data-[state=active]:bg-primary data-[state=active]:text-black text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded border border-[#1a384c] text-white/50 data-[state=active]:border-primary transition-all shadow-lg hover:bg-[#1a384c]/50 active:scale-95 whitespace-nowrap"
+              >
+                All Markets
+              </TabsTrigger>
+              {leagues.map(league => (
                 <TabsTrigger 
-                  value="all"
+                  key={league}
+                  value={league}
                   className="bg-[#1a384c]/30 data-[state=active]:bg-primary data-[state=active]:text-black text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded border border-[#1a384c] text-white/50 data-[state=active]:border-primary transition-all shadow-lg hover:bg-[#1a384c]/50 active:scale-95 whitespace-nowrap"
                 >
-                  All Markets
+                  {league}
                 </TabsTrigger>
-                {leagues.map(league => (
-                  <TabsTrigger 
-                    key={league}
-                    value={league}
-                    className="bg-[#1a384c]/30 data-[state=active]:bg-primary data-[state=active]:text-black text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded border border-[#1a384c] text-white/50 data-[state=active]:border-primary transition-all shadow-lg hover:bg-[#1a384c]/50 active:scale-95 whitespace-nowrap"
-                  >
-                    {league}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
+              ))}
+            </TabsList>
           </div>
 
           <TabsContent value="all" className="m-0 focus-visible:outline-none">
