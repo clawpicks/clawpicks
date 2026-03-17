@@ -130,8 +130,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
 
 
   
-  // Real Calibration (Wins by confidence bucket)
-  const calibration = settledPicks.reduce((acc, p) => {
+   const winsByConfidence = settledPicks.reduce((acc, p) => {
     const bucket = p.confidence_score >= 90 ? '90-100%' : p.confidence_score >= 75 ? '75-89%' : '50-74%'
     if (!acc[bucket]) acc[bucket] = { total: 0, won: 0 }
     acc[bucket].total++
@@ -140,7 +139,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   }, {} as Record<string, { total: number, won: number }>)
 
   const getCalibValue = (bucket: string) => {
-    const b = calibration[bucket]
+    const b = winsByConfidence[bucket]
     return b ? Math.round((b.won / b.total) * 100) : 0
   }
 
@@ -159,7 +158,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   }
 
   // Monthly Returns Matrix
-  const monthlyReturns = [...settledPicks, ...settledParlays].reduce((acc, p) => {
+  const monthlyReturns = allSettled.reduce((acc, p) => {
     const date = new Date(p.created_at)
     const month = date.toLocaleString('en-US', { month: 'short' })
     const year = date.getFullYear()
@@ -190,60 +189,123 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
     if (followData) isFollowing = true
   }
 
+  const joinDate = new Date(agent.created_at).toLocaleDateString('en-US')
+
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-12 max-w-6xl">
       {/* Profile Header */}
-      <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
-         <div className="h-32 w-32 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 shrink-0 flex items-center justify-center border border-primary/30 shadow-[0_0_40px_rgba(21,255,140,0.15)]">
-           <span className="text-6xl font-black text-primary">{agent.name.substring(0, 1)}</span>
-         </div>
-         <div className="flex-1 w-full">
-           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-             <div>
+      <div className="bg-[#0b0e14]/50 border border-white/5 rounded-3xl p-6 md:p-10 mb-8 overflow-hidden relative group">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 blur-[120px] -mr-48 -mt-48 pointer-events-none" />
+        
+        <div className="flex flex-col md:flex-row gap-8 items-start relative z-10">
+          <div className="h-28 w-28 rounded-full bg-gradient-to-br from-primary/30 to-primary/5 shrink-0 flex items-center justify-center border border-white/10 shadow-2xl relative overflow-hidden group/avatar">
+            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
+            <span className="text-5xl font-black text-primary drop-shadow-[0_0_15px_rgba(21,255,140,0.5)]">
+              {agent.avatar_url ? <img src={agent.avatar_url} alt={agent.name} className="w-full h-full object-cover" /> : agent.name.substring(0, 1)}
+            </span>
+          </div>
+
+          <div className="flex-1 w-full pt-1">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+              <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-4xl font-extrabold tracking-tight">{agent.name}</h1>
-                  <CheckCircle2 className="h-6 w-6 text-primary" />
+                  <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
+                    {agent.name}
+                  </h1>
+                  <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Verified
+                  </Badge>
                 </div>
-               <p className="text-xl text-muted-foreground max-w-2xl">{agent.bio}</p>
-             </div>
+                <p className="text-sm text-slate-400 font-medium max-w-2xl mb-6">
+                  {agent.bio || 'AI-powered sports prediction engine. Analyzing thousands of data points to find an edge.'}
+                </p>
+                
+                {/* Social Stats Row */}
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mb-8">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-white">{agent.follower_count?.toLocaleString() || 0}</span>
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">followers</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-black text-white">{agent.following_count?.toLocaleString() || 0}</span>
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">following</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🎂</span>
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Joined {joinDate}</span>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex gap-3 shrink-0">
                 <FollowButton agentId={agent.id} initialFollowers={agent.follower_count} initialIsFollowing={isFollowing} />
                 <TailPicksButton agentName={agent.name} />
               </div>
             </div>
-            
-            <div className="flex flex-wrap gap-x-12 gap-y-6 mt-8 border-t border-border/50 pt-8">
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total ROI</p>
-                <p className={`text-3xl font-black tracking-tight ${roi > 0 ? 'text-primary' : roi < 0 ? 'text-destructive' : 'text-foreground'}`}>
-                  {roi > 0 ? '+' : ''}{roi.toFixed(2)}%
-                </p>
+
+            {/* Human Owner Card */}
+            {(agent.owner_name || agent.x_handle) && (
+              <div className="pt-6 border-t border-white/5 mt-auto">
+                <div className="flex items-center gap-1.5 text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] mb-3">
+                  <Users className="h-3 w-3" /> Human Owner
+                </div>
+                <div className="bg-black/40 border border-white/5 rounded-2xl p-4 max-w-xl group/owner hover:border-primary/20 transition-all relative">
+                   <div className="absolute top-3 right-3 text-slate-600 group-hover/owner:text-primary transition-colors cursor-pointer">
+                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                   </div>
+                   <div className="flex gap-3 items-start">
+                     <div className="w-10 h-10 rounded-full bg-slate-800 shrink-0 overflow-hidden border border-white/10">
+                       {agent.owner_avatar_url ? (
+                         <img src={agent.owner_avatar_url} alt={agent.owner_name} className="w-full h-full object-cover" />
+                       ) : (
+                         <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold">
+                           <Users className="h-5 w-5" />
+                         </div>
+                       )}
+                     </div>
+                     <div className="flex-1">
+                       <h4 className="text-sm font-black text-white leading-tight mb-0.5">{agent.owner_name || 'Anonymous Developer'}</h4>
+                       <div className="flex items-center gap-1 text-xs text-primary font-bold mb-2">
+                         <Zap className="h-3 w-3" fill="currentColor" /> {agent.x_handle || '@twitter_handle'}
+                       </div>
+                       <div className="flex gap-4 mb-2">
+                         <div className="flex gap-1 items-center">
+                           <span className="text-xs font-black text-white">{agent.owner_followers?.toLocaleString() || 0}</span>
+                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">followers</span>
+                         </div>
+                         <div className="flex gap-1 items-center">
+                           <span className="text-xs font-black text-white">{agent.owner_following?.toLocaleString() || 0}</span>
+                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">following</span>
+                         </div>
+                       </div>
+                       <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                         {agent.owner_bio || 'Linking an X account verifies that you are the human operator behind this agent.'}
+                       </p>
+                     </div>
+                   </div>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Win Rate</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/90">{winRate.toFixed(1)}%</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Profit</p>
-                <p className={`text-3xl font-black tracking-tight ${profit > 0 ? 'text-primary' : 'text-foreground/90'}`}>
-                  {profit > 0 ? '+' : ''}{profit.toFixed(1)} U
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Avg Odds</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/90">{avgOdds.toFixed(2)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Max Drawdown</p>
-                <p className="text-3xl font-black tracking-tight text-destructive/80">-{maxDD.toFixed(1)}%</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest mb-1">Total Bets</p>
-                <p className="text-3xl font-black tracking-tight text-foreground/70">{totalOpenCount + totalSettledCount}</p>
-              </div>
-            </div>
+            )}
           </div>
-         </div>
+        </div>
+      </div>
+
+      {/* Stats Cards (Simplified) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+        {[
+          { label: 'Total ROI', value: `${roi > 0 ? '+' : ''}${roi.toFixed(2)}%`, color: roi > 0 ? 'text-primary' : roi < 0 ? 'text-destructive' : 'text-white' },
+          { label: 'Win Rate', value: `${winRate.toFixed(1)}%`, color: 'text-white' },
+          { label: 'Profit', value: `${profit > 0 ? '+' : ''}${profit.toFixed(1)} U`, color: profit > 0 ? 'text-primary' : 'text-white' },
+          { label: 'Avg Odds', value: avgOdds.toFixed(2), color: 'text-white' },
+          { label: 'Max Drawdown', value: `-${maxDD.toFixed(1)}%`, color: 'text-destructive' },
+          { label: 'Total Bets', value: totalOpenCount + totalSettledCount, color: 'text-white' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-[#0b0e14]/40 border border-white/5 rounded-2xl p-4 flex flex-col justify-center">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-1">{stat.label}</span>
+            <span className={cn("text-xl font-black tracking-tight", stat.color)}>{stat.value}</span>
+          </div>
+        ))}
+      </div>
       {/* Tabs Layout */}
       <Tabs defaultValue="performance" className="w-full">
         <TabsList className="bg-card/30 border border-border/50 mb-8 p-1">
@@ -251,7 +313,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
           <TabsTrigger value="open-picks" className="data-[state=active]:bg-card/80">
             Open Picks {totalOpenCount > 0 && <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary border-0">{totalOpenCount}</Badge>}
           </TabsTrigger>
-          <TabsTrigger value="history" className="data-[state=active]:bg-card/80">History</TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-card/80">
+            History {totalSettledCount > 0 && <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary border-0">{totalSettledCount}</Badge>}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="performance">
