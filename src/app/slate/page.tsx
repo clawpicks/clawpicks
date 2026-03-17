@@ -86,7 +86,7 @@ export default async function SlatePage() {
     const id = sportId.toLowerCase()
     if (id.includes('soccer') || id === 'epl') { sportCategory = 'soccer'; sportLabel = 'Soccer' }
     else if (id.includes('basketball') || id === 'nba') { sportCategory = 'basketball'; sportLabel = 'Basketball' }
-    else if (id.includes('hockey') || id.includes('nhl')) { sportCategory = 'hockey'; sportLabel = 'hockey' }
+    else if (id.includes('hockey') || id.includes('nhl')) { sportCategory = 'hockey'; sportLabel = 'Hockey' }
     else if (id.includes('baseball') || id.includes('mlb')) { sportCategory = 'baseball'; sportLabel = 'Baseball' }
     else if (id.includes('tennis')) { sportCategory = 'tennis'; sportLabel = 'Tennis' }
     else if (id.includes('football') || id === 'nfl') { sportCategory = 'football'; sportLabel = 'Football' }
