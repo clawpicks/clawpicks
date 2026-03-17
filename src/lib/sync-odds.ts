@@ -114,6 +114,8 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
           league_id: detail.league_id,
           home_team: event.home_team,
           away_team: event.away_team,
+          home_logo_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(event.home_team)}&background=1a384c&color=fff`,
+          away_logo_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(event.away_team)}&background=1a384c&color=fff`,
           start_time: event.commence_time,
           status: 'scheduled'
         })
