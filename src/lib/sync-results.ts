@@ -1,20 +1,20 @@
 import { createClient } from '@supabase/supabase-js'
 import { settleEvent } from './settlement'
 
-const SPORT_DETAILS = [
-  'basketball_nba',
-  'americanfootball_nfl',
-  'soccer_uefa_champs_league',
-  'soccer_epl',
-  'soccer_germany_bundesliga',
-  'soccer_spain_la_liga',
-  'soccer_italy_serie_a',
-  'soccer_france_ligue_one',
-  'soccer_portugal_primeira_liga',
-  'baseball_mlb',
-  'icehockey_nhl',
-  'tennis_atp_wimbledon'
-]
+const SPORT_DETAILS: Record<string, string> = {
+  'nba_regular': 'basketball_nba',
+  'nfl_regular': 'americanfootball_nfl',
+  'ucl': 'soccer_uefa_champs_league',
+  'epl': 'soccer_epl',
+  'bundesliga': 'soccer_germany_bundesliga',
+  'laliga': 'soccer_spain_la_liga',
+  'seriea': 'soccer_italy_serie_a',
+  'ligue1': 'soccer_france_ligue_one',
+  'primeira': 'soccer_portugal_primeira_liga',
+  'mlb_regular': 'baseball_mlb',
+  'nhl_regular': 'icehockey_nhl',
+  'wimbledon': 'tennis_atp_wimbledon'
+}
 
 export async function syncCompletedResults() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -32,9 +32,45 @@ export async function syncCompletedResults() {
     throw new Error('THE_ODDS_API_KEY is not defined')
   }
 
+  // 1. Gather all active leagues we need to check scores for
+  const activeLeagueIds = new Set<string>()
+
+  // Check straight picks
+  const { data: picks } = await supabase
+    .from('picks')
+    .select('events!inner(league_id)')
+    .eq('status', 'open')
+  
+  picks?.forEach(p => {
+    if ((p.events as any)?.league_id) activeLeagueIds.add((p.events as any).league_id)
+  })
+
+  // Check parlay legs
+  const { data: legs } = await supabase
+    .from('parlay_legs')
+    .select('events!inner(league_id)')
+    .eq('status', 'open')
+
+  legs?.forEach(l => {
+    if ((l.events as any)?.league_id) activeLeagueIds.add((l.events as any).league_id)
+  })
+
+  const sportsToFetch = new Set<string>()
+  for (const leagueId of activeLeagueIds) {
+    if (SPORT_DETAILS[leagueId]) {
+      sportsToFetch.add(SPORT_DETAILS[leagueId])
+    }
+  }
+
   const results = []
 
-  for (const sportKey of SPORT_DETAILS) {
+  if (sportsToFetch.size === 0) {
+    console.log('No active picks found. Skipping results sync.')
+    return [{ message: 'No active picks to settle' }]
+  }
+
+  // 2. Fetch results only for needed sports
+  for (const sportKey of sportsToFetch) {
     try {
       console.log(`Fetching results for ${sportKey}...`)
       
@@ -73,10 +109,10 @@ export async function syncCompletedResults() {
         if (event.status === 'completed') continue
 
         // Game is completed in API but not in our DB
-        const homeScoreEntry = scoreEntry.scores.find((s: any) => s.name === scoreEntry.home_team)
-        const awayScoreEntry = scoreEntry.scores.find((s: any) => s.name === scoreEntry.away_team)
+        const homeScoreEntry = scoreEntry.scores?.find((s: any) => s.name === scoreEntry.home_team)
+        const awayScoreEntry = scoreEntry.scores?.find((s: any) => s.name === scoreEntry.away_team)
 
-        if (homeScoreEntry && awayScoreEntry) {
+        if (homeScoreEntry?.score && awayScoreEntry?.score) {
           console.log(`Settling event ${event.id} (${scoreEntry.home_team} vs ${scoreEntry.away_team}): ${homeScoreEntry.score} - ${awayScoreEntry.score}`)
           await settleEvent(
             supabase,

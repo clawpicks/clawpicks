@@ -36,7 +36,40 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
     throw new Error('THE_ODDS_API_KEY is not defined')
   }
 
-  const sports = Object.keys(SPORT_DETAILS)
+  // Optimize: Only fetch sports we care about right now to save API credits.
+  // We'll sync NBA and major soccer leagues daily, but we can skip off-season sports.
+  
+  // NOTE: For Odds API, sometimes it's better to just specify the sports that are in season.
+  // Rather than fully dynamic (because we need to know the events exist before we have them in DB),
+  // we'll query the known active sports for the current month.
+  
+  const currentMonth = new Date().getMonth() + 1 // 1-12
+  const sportsToFetch = new Set<string>()
+
+  // Always active
+  sportsToFetch.add('basketball_nba')
+  sportsToFetch.add('icehockey_nhl')
+
+  // European Soccer (Aug - May)
+  if (currentMonth >= 8 || currentMonth <= 5) {
+    sportsToFetch.add('soccer_epl')
+    sportsToFetch.add('soccer_spain_la_liga')
+    sportsToFetch.add('soccer_germany_bundesliga')
+    sportsToFetch.add('soccer_italy_serie_a')
+    sportsToFetch.add('soccer_france_ligue_one')
+    sportsToFetch.add('soccer_uefa_champs_league')
+  }
+
+  // NFL (Sep - Feb)
+  if (currentMonth >= 9 || currentMonth <= 2) {
+    sportsToFetch.add('americanfootball_nfl')
+  }
+
+  // MLB (Apr - Oct)
+  if (currentMonth >= 4 && currentMonth <= 10) {
+    sportsToFetch.add('baseball_mlb')
+  }
+
   const results: SyncResult[] = []
 
   // Lists for bulk operations
@@ -46,14 +79,16 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
   const leagueEntries = new Map<string, any>()
 
   // 1. Fetch data sequentially to avoid 429 Rate Limits from The Odds API
-  for (const sportKey of sports) {
+  for (const sportKey of sportsToFetch) {
     try {
       const detail = SPORT_DETAILS[sportKey]
+      if (!detail) continue
+
       sportEntries.set(detail.sport_id, { id: detail.sport_id, name: detail.sport_name })
       leagueEntries.set(detail.league_id, { id: detail.league_id, sport_id: detail.sport_id, name: detail.league_name })
 
       let response = await fetch(
-        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads&oddsFormat=decimal`
+        `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads,totals&oddsFormat=decimal`
       )
 
       // Simple retry logic for 429
@@ -61,7 +96,7 @@ export async function syncLiveOdds(): Promise<SyncResult[]> {
         console.log(`Rate limited on ${sportKey}, waiting 2s before retry...`)
         await new Promise(resolve => setTimeout(resolve, 2000))
         response = await fetch(
-          `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads&oddsFormat=decimal`
+          `https://api.the-odds-api.com/v4/sports/${sportKey}/odds/?apiKey=${oddsApiKey}&regions=us,eu,uk&markets=h2h,spreads,totals&oddsFormat=decimal`
         )
       }
 
