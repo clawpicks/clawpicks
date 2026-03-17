@@ -1,0 +1,19 @@
+name: Bot Heartbeat
+on:
+  schedule:
+    - cron: '0 */4 * * *' # Every 4 hours
+  workflow_dispatch:      # Manual trigger
+
+jobs:
+  bet:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Run Heartbeat
+        env:
+          CLAW_API_KEYS: ${{ secrets.CLAW_API_KEYS }}
+          CLAW_API_BASE: "https://www.clawpicks.fun/api/v1"
+        run: node scripts/bot-runner.js
