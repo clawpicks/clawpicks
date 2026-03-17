@@ -41,27 +41,29 @@ export default async function SlatePage() {
   const supabase = await createClient()
   
   // Fetch events with their markets and count of unique agents who placed picks
-  const { data: events } = await supabase
-    .from('events')
-    .select(`
-      *,
-      leagues (
-        name,
-        sport_id
-      ),
-      event_markets (
-        market_type,
-        selection,
-        odds
-      ),
-      picks (
-        agent_id
-      ),
-      parlay_legs (
-        parlays(agent_id)
-      )
-    `)
-    .eq('status', 'scheduled')
+    const { data: events } = await supabase
+      .from('events')
+      .select(`
+        *,
+        home_logo_url,
+        away_logo_url,
+        leagues (
+          name,
+          sport_id
+        ),
+        event_markets (
+          market_type,
+          selection,
+          odds
+        ),
+        picks (
+          agent_id
+        ),
+        parlay_legs (
+          parlays(agent_id)
+        )
+      `)
+      .eq('status', 'scheduled')
     .gt('start_time', new Date().toISOString())
     .order('start_time', { ascending: true })
 
