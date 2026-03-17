@@ -10,7 +10,7 @@ import Link from 'next/link'
 
 function EventRow({ event }: { event: any }) {
   return (
-    <div className="group relative w-full overflow-hidden bg-[#0a1620] hover:bg-[#0f212e] transition-colors p-3 md:p-4 flex flex-col md:flex-row md:items-center">
+    <div className="group relative w-full overflow-hidden bg-[#0b0e14] border border-[#22252e] rounded-xl hover:border-[#383c4a] transition-all p-4 md:p-5 flex flex-col md:flex-row md:items-center hover:shadow-[0_0_20px_rgba(0,0,0,0.4)]">
       <Link href={`/slate/${event.id}`} className="absolute inset-0 z-0" aria-label={`View ${event.home} vs ${event.away}`} />
       
       {/* Left side: Time and Teams */}
@@ -89,33 +89,6 @@ function EventRow({ event }: { event: any }) {
 }
 
 export function EventGrid({ events }: { events: any[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const [showLeftArrow, setShowLeftArrow] = useState(false)
-  const [showRightArrow, setShowRightArrow] = useState(false)
-
-  const checkScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-      setShowLeftArrow(scrollLeft > 10)
-      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10)
-    }
-  }
-
-  useEffect(() => {
-    checkScroll()
-    window.addEventListener('resize', checkScroll)
-    return () => window.removeEventListener('resize', checkScroll)
-  }, [events])
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = 200
-      scrollRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth'
-      })
-    }
-  }
 
   if (events.length === 0) {
     return (
@@ -136,23 +109,10 @@ export function EventGrid({ events }: { events: any[] }) {
     <div className="space-y-6">
       <Tabs defaultValue="all" className="w-full">
         <div className="flex flex-col gap-4">
-          {/* League Inline Navigation with Carousel Controls */}
-          <div className="relative group/carousel border-b border-[#1a384c]">
-            {showLeftArrow && (
-              <button 
-                onClick={() => scroll('left')}
-                className="absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-[#0f212e]/90 hover:bg-[#1a384c] text-white p-2 rounded-full shadow-2xl transition-all border border-white/10 backdrop-blur-md hover:scale-110 active:scale-95"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-            )}
-            
-            <div 
-              ref={scrollRef}
-              onScroll={checkScroll}
-              className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-3 px-8"
-            >
-              <TabsList className="bg-transparent h-auto p-0 flex gap-2">
+          {/* League Inline Navigation */}
+          <div className="relative border-b border-[#22252e] mb-4">
+            <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-3">
+              <TabsList className="bg-transparent h-auto p-0 flex justify-start gap-2 w-full pr-4">
                 <TabsTrigger 
                   value="all"
                   className="bg-[#1a384c]/30 data-[state=active]:bg-primary data-[state=active]:text-black text-[10px] font-black uppercase tracking-[0.2em] px-5 py-3 rounded border border-[#1a384c] text-white/50 data-[state=active]:border-primary transition-all shadow-lg hover:bg-[#1a384c]/50 active:scale-95 whitespace-nowrap"
@@ -170,29 +130,10 @@ export function EventGrid({ events }: { events: any[] }) {
                 ))}
               </TabsList>
             </div>
-
-            {showRightArrow && (
-              <button 
-                onClick={() => scroll('right')}
-                className="absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-[#0f212e]/90 hover:bg-[#1a384c] text-white p-2 rounded-full shadow-2xl transition-all border border-white/10 backdrop-blur-md hover:scale-110 active:scale-95"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-
-            {/* Fade effect */}
-            <div className={cn(
-              "absolute right-0 top-0 bottom-3 w-16 bg-gradient-to-l from-[#0f212e] to-transparent pointer-events-none transition-opacity duration-300",
-              showRightArrow ? "opacity-100" : "opacity-0"
-            )} />
-            <div className={cn(
-              "absolute left-0 top-0 bottom-3 w-16 bg-gradient-to-r from-[#0f212e] to-transparent pointer-events-none transition-opacity duration-300",
-              showLeftArrow ? "opacity-100" : "opacity-0"
-            )} />
           </div>
 
           <TabsContent value="all" className="m-0 focus-visible:outline-none">
-            <div className="flex flex-col rounded overflow-hidden border border-[#1a384c] divide-y divide-[#1a384c]">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {events.map((event: any) => (
                 <EventRow key={event.id} event={event} />
               ))}
@@ -201,7 +142,7 @@ export function EventGrid({ events }: { events: any[] }) {
 
           {leagues.map(league => (
             <TabsContent key={league} value={league} className="m-0 focus-visible:outline-none">
-              <div className="flex flex-col rounded overflow-hidden border border-[#1a384c] divide-y divide-[#1a384c]">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {events.filter(e => e.leagueName === league).map((event: any) => (
                   <EventRow key={event.id} event={event} />
                 ))}
