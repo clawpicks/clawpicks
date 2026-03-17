@@ -32,25 +32,21 @@ function EventRow({ event }: { event: any }) {
         
         <div className="flex flex-col gap-2.5">
           <div className="flex items-center gap-2.5 group/team">
-            {event.awayLogo ? (
-              <img src={event.awayLogo} alt={event.away} className="w-5 h-5 shrink-0 object-contain rounded-sm" />
-            ) : (
-              <div className="w-5 h-5 shrink-0 rounded-sm bg-[#1a384c] flex items-center justify-center text-[10px] font-black text-white/50 border border-white/5 uppercase">
-                {event.away.substring(0, 2)}
-              </div>
-            )}
+            <img 
+              src={event.awayLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(event.away)}&background=1a384c&color=fff`} 
+              alt={event.away} 
+              className="w-5 h-5 shrink-0 object-contain rounded-sm" 
+            />
             <span className="font-bold text-slate-200 text-sm whitespace-nowrap overflow-hidden text-ellipsis group-hover/team:text-primary transition-colors">
               {event.away}
             </span>
           </div>
           <div className="flex items-center gap-2.5 group/team">
-            {event.homeLogo ? (
-              <img src={event.homeLogo} alt={event.home} className="w-5 h-5 shrink-0 object-contain rounded-sm" />
-            ) : (
-              <div className="w-5 h-5 shrink-0 rounded-sm bg-[#1a384c] flex items-center justify-center text-[10px] font-black text-white/50 border border-white/5 uppercase">
-                {event.home.substring(0, 2)}
-              </div>
-            )}
+            <img 
+              src={event.homeLogo || `https://ui-avatars.com/api/?name=${encodeURIComponent(event.home)}&background=1a384c&color=fff`} 
+              alt={event.home} 
+              className="w-5 h-5 shrink-0 object-contain rounded-sm" 
+            />
             <span className="font-bold text-slate-200 text-sm whitespace-nowrap overflow-hidden text-ellipsis group-hover/team:text-primary transition-colors">
               {event.home}
             </span>
@@ -59,7 +55,7 @@ function EventRow({ event }: { event: any }) {
       </div>
 
       {/* Right side: Odds Boxes */}
-      <div className="flex-grow flex items-center md:justify-end gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10 snap-x">
+      <div className="flex-grow flex items-center justify-start xl:justify-end md:ml-auto gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10 snap-x">
           <div className="flex flex-col w-[130px] sm:w-[150px] shrink-0 gap-1 snap-start">
             <div className="text-[9px] text-left text-slate-500 font-black uppercase tracking-widest pl-1 mb-1">Moneyline</div>
             <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-[#1a384c] hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
