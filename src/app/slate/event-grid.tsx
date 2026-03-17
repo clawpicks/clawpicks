@@ -60,27 +60,27 @@ function EventRow({ event }: { event: any }) {
 
       {/* Right side: Odds Boxes */}
       <div className="flex-grow flex items-center md:justify-end gap-2 md:gap-3 overflow-x-auto pb-1 md:pb-0 hide-scrollbar relative z-10 snap-x">
-          <div className="flex flex-col w-[110px] sm:w-[130px] shrink-0 gap-1 snap-start">
-            <div className="text-[9px] text-center text-slate-500 font-black uppercase tracking-wider mb-1">Moneyline</div>
-            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter group-hover/btn:text-slate-400">Away</span>
+          <div className="flex flex-col w-[130px] sm:w-[150px] shrink-0 gap-1 snap-start">
+            <div className="text-[9px] text-left text-slate-500 font-black uppercase tracking-widest pl-1 mb-1">Moneyline</div>
+            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-[#1a384c] hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight group-hover/btn:text-slate-400">Away</span>
               <span className="text-sm font-black text-emerald-400">{Number(event.odds.away).toFixed(2)}</span>
             </button>
-            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter group-hover/btn:text-slate-400">Home</span>
+            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-[#1a384c] hover:border-white/10 transition-all rounded py-2 px-3 group/btn">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-tight group-hover/btn:text-slate-400">Home</span>
               <span className="text-sm font-black text-emerald-400">{Number(event.odds.home).toFixed(2)}</span>
             </button>
           </div>
 
-          <div className={cn("flex flex-col w-[90px] sm:w-[110px] shrink-0 gap-1 snap-start transition-opacity", !event.spread.home && "opacity-20")}>
+          <div className={cn("flex flex-col w-[80px] sm:w-[95px] shrink-0 gap-1 snap-start transition-opacity", !event.spread.home && "opacity-20")}>
             <div className="text-[9px] text-center text-slate-500 font-black uppercase tracking-wider mb-1">Spread</div>
-            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{event.spread.away?.selection || '-'}</span>
-              <span className="text-sm font-black text-emerald-400">{event.spread.away ? Number(event.spread.away.odds).toFixed(2) : '-'}</span>
+            <button className="flex justify-between items-center bg-[#0d1b24] hover:bg-[#1a384c] border border-[#1a384c]/50 hover:border-white/10 transition-all rounded py-2 px-2 group/btn">
+              <span className="text-[10px] font-bold text-slate-500/50 uppercase tracking-tighter">{event.spread.away?.selection || '-'}</span>
+              <span className="text-sm font-black text-emerald-400/50">{event.spread.away ? Number(event.spread.away.odds).toFixed(2) : '-'}</span>
             </button>
-            <button className="flex justify-between items-center bg-[#1a384c]/40 hover:bg-[#1a384c] border border-white/5 hover:border-white/10 transition-all rounded py-2 px-2.5 group/btn">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{event.spread.home?.selection || '-'}</span>
-              <span className="text-sm font-black text-emerald-400">{event.spread.home ? Number(event.spread.home.odds).toFixed(2) : '-'}</span>
+            <button className="flex justify-between items-center bg-[#0d1b24] hover:bg-[#1a384c] border border-[#1a384c]/50 hover:border-white/10 transition-all rounded py-2 px-2 group/btn">
+              <span className="text-[10px] font-bold text-slate-500/50 uppercase tracking-tighter">{event.spread.home?.selection || '-'}</span>
+              <span className="text-sm font-black text-emerald-400/50">{event.spread.home ? Number(event.spread.home.odds).toFixed(2) : '-'}</span>
             </button>
           </div>
       </div>
