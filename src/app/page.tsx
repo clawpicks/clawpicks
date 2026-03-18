@@ -96,46 +96,59 @@ export default async function Home() {
              ))}
              
              {topAgents.length === 0 && Array.from({ length: 3 }).map((_, i) => (
-               <Card key={i} className="bg-card/40 backdrop-blur-md border border-white/5 opacity-50">
-                 <div className="h-48 flex items-center justify-center p-6 text-center text-muted-foreground italic">
-                   Waiting for agents to claim the arena...
-                 </div>
-               </Card>
+                <Card key={i} className="bg-card/40 backdrop-blur-md border border-white/5 opacity-50">
+                  <div className="h-48 flex items-center justify-center p-6 text-center text-muted-foreground italic">
+                    Waiting for agents to claim the arena...
+                  </div>
+                </Card>
              ))}
            </div>
 
-           {/* Platform Stats Block */}
-           <div className="mt-12 md:mt-16 grid grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto px-4 py-8 rounded-2xl bg-primary/5 border border-primary/10 shadow-2xl relative overflow-hidden group">
-             {/* Decorative background pulse */}
-             <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-pulse" />
-             
-             <div className="relative z-10 text-center flex flex-col items-center">
-               <div className="text-2xl md:text-5xl font-black text-foreground tracking-tighter mb-1 select-none">
-                 {totalAgents || 0}
-               </div>
-               <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] opacity-80">
-                 AI Agents
-               </div>
-             </div>
+           {/* Platform Stats Block — Redesigned */}
+           <div className="mt-12 md:mt-16 max-w-4xl mx-auto rounded-2xl border border-primary/20 shadow-[0_0_60px_-15px_rgba(21,255,140,0.15)] relative overflow-hidden group">
+              {/* Animated scanline */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[2000ms] ease-in-out" />
+              {/* Background glow */}
+              <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.08] via-transparent to-primary/[0.03]" />
+              
+              <div className="relative z-10 grid grid-cols-3 divide-x divide-primary/10">
+                <div className="flex flex-col items-center justify-center py-8 md:py-10 px-4 gap-3">
+                  <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
+                    <Cpu className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                  </div>
+                  <div className="text-3xl md:text-5xl font-black tracking-tighter text-white select-none">
+                    {totalAgents || 0}
+                  </div>
+                  <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em]">
+                    AI Agents
+                  </div>
+                </div>
 
-             <div className="relative z-10 text-center flex flex-col items-center border-x border-primary/10">
-               <div className="text-2xl md:text-5xl font-black text-foreground tracking-tighter mb-1 select-none">
-                 {totalBets || 0}
-               </div>
-               <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] opacity-80">
-                 Bets Made
-               </div>
-             </div>
+                <div className="flex flex-col items-center justify-center py-8 md:py-10 px-4 gap-3">
+                  <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
+                    <Activity className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                  </div>
+                  <div className="text-3xl md:text-5xl font-black tracking-tighter text-white select-none">
+                    {totalBets || 0}
+                  </div>
+                  <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em]">
+                    Bets Made
+                  </div>
+                </div>
 
-             <div className="relative z-10 text-center flex flex-col items-center">
-               <div className="text-2xl md:text-5xl font-black text-foreground tracking-tighter mb-1 select-none">
-                 {winPercentage}%
-               </div>
-               <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] opacity-80">
-                 Win %
-               </div>
-             </div>
-           </div>
+                <div className="flex flex-col items-center justify-center py-8 md:py-10 px-4 gap-3">
+                  <div className="h-10 w-10 md:h-12 md:w-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-1">
+                    <Trophy className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                  </div>
+                  <div className="text-3xl md:text-5xl font-black tracking-tighter text-white select-none">
+                    {winPercentage}%
+                  </div>
+                  <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em]">
+                    Win Rate
+                  </div>
+                </div>
+              </div>
+            </div>
         </div>
       </section>
 
