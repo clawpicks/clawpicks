@@ -2,10 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Trophy, TrendingUp, Minus } from 'lucide-react'
+import { Trophy, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -30,6 +28,44 @@ interface LeaderboardAgent {
   has_long_track_record?: boolean
 }
 
+function getRankDisplay(index: number) {
+  if (index === 0) return (
+    <div className="flex items-center justify-center">
+      <div className="h-8 w-8 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+        <Trophy className="h-4 w-4 text-yellow-500" />
+      </div>
+    </div>
+  )
+  if (index === 1) return (
+    <div className="flex items-center justify-center">
+      <div className="h-8 w-8 rounded-full bg-gray-400/10 border border-gray-400/20 flex items-center justify-center">
+        <Trophy className="h-4 w-4 text-gray-400" />
+      </div>
+    </div>
+  )
+  if (index === 2) return (
+    <div className="flex items-center justify-center">
+      <div className="h-8 w-8 rounded-full bg-amber-600/10 border border-amber-600/20 flex items-center justify-center">
+        <Trophy className="h-4 w-4 text-amber-600" />
+      </div>
+    </div>
+  )
+  return <span className="text-muted-foreground/60 font-semibold text-sm flex justify-center">#{index + 1}</span>
+}
+
+function getAvatarColor(name: string) {
+  const charCode = name.charCodeAt(0) % 6
+  const colors = [
+    { bg: 'bg-emerald-500/15', border: 'border-emerald-500/20', text: 'text-emerald-400' },
+    { bg: 'bg-violet-500/15', border: 'border-violet-500/20', text: 'text-violet-400' },
+    { bg: 'bg-amber-500/15', border: 'border-amber-500/20', text: 'text-amber-400' },
+    { bg: 'bg-cyan-500/15', border: 'border-cyan-500/20', text: 'text-cyan-400' },
+    { bg: 'bg-rose-500/15', border: 'border-rose-500/20', text: 'text-rose-400' },
+    { bg: 'bg-lime-500/15', border: 'border-lime-500/20', text: 'text-lime-400' },
+  ]
+  return colors[charCode]
+}
+
 export function LeaderboardClient({ initialAgents }: { initialAgents: LeaderboardAgent[] }) {
   const [activeTab, setActiveTab] = useState<'weekly' | 'monthly' | 'all-time'>('all-time')
   const [activeSport, setActiveSport] = useState<'All' | 'NBA' | 'NFL'>('All')
@@ -47,7 +83,6 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
   const filteredAgents = useMemo(() => {
     let list = [...processedAgents]
     
-    // Sort logic
     list.sort((a, b) => {
       if (sortBy === 'profit') return (b.profit_units || 0) - (a.profit_units || 0)
       if (sortBy === 'volume') return (b.settled_picks || 0) - (a.settled_picks || 0)
@@ -57,12 +92,10 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
       return bRoi - aRoi
     })
 
-    // Filter by sport
     if (activeSport !== 'All') {
       list = list.filter(a => a.sport === activeSport || a.sport === 'MIXED')
     }
 
-    // Filter by sample size
     if (minPicks > 0) {
       list = list.filter(a => a.settled_picks >= minPicks)
     }
@@ -70,139 +103,243 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
     return list
   }, [processedAgents, activeTab, activeSport, minPicks, sortBy])
 
+  const timePeriods = [
+    { value: 'weekly', label: '7 Days' },
+    { value: 'monthly', label: '30 Days' },
+    { value: 'all-time', label: 'All-Time' },
+  ] as const
+
+  const sortOptions = [
+    { value: 'roi', label: 'ROI' },
+    { value: 'profit', label: 'Profit' },
+    { value: 'volume', label: 'Volume' },
+  ] as const
+
+  const sportOptions = ['All', 'NBA', 'NFL'] as const
+
   return (
-    <Tabs 
-      value={activeTab} 
-      onValueChange={(val) => setActiveTab(val as 'weekly' | 'monthly' | 'all-time')} 
-      className="w-full"
-    >
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
-        <div className="flex flex-col md:flex-row gap-4 w-full lg:w-auto">
-          <TabsList className="bg-card/50 border border-border/50">
-            <TabsTrigger value="weekly">7 Days</TabsTrigger>
-            <TabsTrigger value="monthly">30 Days</TabsTrigger>
-            <TabsTrigger value="all-time">All-Time</TabsTrigger>
-          </TabsList>
+    <div className="w-full space-y-6">
+      {/* --- Toolbar --- */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+        
+        {/* Left: time period + sort */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Time period pills */}
+          <div className="flex items-center rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm h-10 overflow-hidden">
+            {timePeriods.map((period, i) => (
+              <div key={period.value} className="flex items-center">
+                {i > 0 && <div className="w-px h-5 bg-border/20" />}
+                <button
+                  onClick={() => setActiveTab(period.value)}
+                  className={cn(
+                    "px-4 h-full text-xs font-semibold transition-all duration-200",
+                    activeTab === period.value
+                      ? "text-foreground bg-foreground/5"
+                      : "text-muted-foreground/60 hover:text-muted-foreground"
+                  )}
+                >
+                  {period.label}
+                </button>
+              </div>
+            ))}
+          </div>
           
-          <div className="flex bg-card/30 border border-border/50 rounded-lg p-1">
-             <button onClick={() => setSortBy('roi')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", sortBy === 'roi' ? "bg-primary/20 text-primary" : "text-muted-foreground")}>ROI</button>
-             <button onClick={() => setSortBy('profit')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", sortBy === 'profit' ? "bg-primary/20 text-primary" : "text-muted-foreground")}>Profit</button>
-             <button onClick={() => setSortBy('volume')} className={cn("px-4 py-1.5 text-xs font-bold rounded-md transition-all", sortBy === 'volume' ? "bg-primary/20 text-primary" : "text-muted-foreground")}>Volume</button>
+          {/* Sort pills */}
+          <div className="flex items-center rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm h-10 overflow-hidden">
+            {sortOptions.map((opt, i) => (
+              <div key={opt.value} className="flex items-center">
+                {i > 0 && <div className="w-px h-5 bg-border/20" />}
+                <button
+                  onClick={() => setSortBy(opt.value)}
+                  className={cn(
+                    "px-4 h-full text-xs font-bold transition-all duration-200",
+                    sortBy === opt.value
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground/60 hover:text-muted-foreground"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-card/30 border border-border/50 rounded-lg">
-             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Min Picks:</span>
-             <select 
-               value={minPicks} 
-               onChange={(e) => setMinPicks(Number(e.target.value))}
-               className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer text-foreground appearance-none [&>option]:text-background [&>option]:bg-foreground"
-             >
-               <option value={0}>Any</option>
-               <option value={10}>10+</option>
-               <option value={50}>50+</option>
-               <option value={100}>100+</option>
-             </select>
+        {/* Right: min picks + sport filter */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Min Picks */}
+          <div className="flex items-center gap-2.5 px-4 h-10 bg-card/30 backdrop-blur-sm border border-border/30 rounded-xl">
+            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">Min Picks:</span>
+            <div className="relative">
+              <select 
+                value={minPicks} 
+                onChange={(e) => setMinPicks(Number(e.target.value))}
+                className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer text-foreground appearance-none pr-4 [&>option]:text-background [&>option]:bg-foreground"
+              >
+                <option value={0}>Any</option>
+                <option value={10}>10+</option>
+                <option value={50}>50+</option>
+                <option value={100}>100+</option>
+              </select>
+              <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40 pointer-events-none" />
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <Link href="/compare">
-              <Badge 
-                variant="outline" 
-                className="px-3 py-1.5 cursor-pointer bg-primary/10 text-primary border-primary/30 hover:bg-primary/20 text-[10px] font-bold uppercase"
-              >
-                Compare Agents
-              </Badge>
-            </Link>
-            {['All', 'NBA', 'NFL'].map(sport => (
-              <Badge 
-                key={sport}
-                variant="outline" 
-                onClick={() => setActiveSport(sport as any)}
-                className={cn(
-                  "px-3 py-1.5 cursor-pointer transition-all hover:bg-primary/20 text-[10px] font-bold uppercase",
-                  activeSport === sport 
-                    ? "bg-primary/20 text-primary border-primary/50 opacity-100" 
-                    : "opacity-50 border-white/10"
-                )}
-              >
-                {sport}
-              </Badge>
+          {/* Compare button placeholder space removed, sport filters */}
+          <div className="flex items-center rounded-xl border border-border/30 bg-card/30 backdrop-blur-sm h-10 overflow-hidden">
+            {sportOptions.map((sport, i) => (
+              <div key={sport} className="flex items-center">
+                {i > 0 && <div className="w-px h-5 bg-border/20" />}
+                <button
+                  onClick={() => setActiveSport(sport as typeof activeSport)}
+                  className={cn(
+                    "px-4 h-full text-xs font-bold uppercase tracking-wide transition-all duration-200",
+                    activeSport === sport
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground/60 hover:text-muted-foreground"
+                  )}
+                >
+                  {sport}
+                </button>
+              </div>
             ))}
           </div>
         </div>
       </div>
 
-      <Card className="bg-card/40 backdrop-blur border-white/5 border overflow-hidden">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-muted/20 hover:bg-muted/20">
-              <TableRow className="border-border/50">
-                <TableHead className="w-[80px] pl-6 text-[10px] font-bold uppercase tracking-widest">Rank</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest">Agent</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-center">Settled</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Win Rate</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Avg Odds</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right">Max Drawdown</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-right pr-6">ROI</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAgents.map((agent, index) => {
-                const displayRoi = activeTab === 'weekly' ? (agent.last_7d_roi || 0) : 
-                                 activeTab === 'monthly' ? (agent.last_30d_roi || 0) : 
-                                 (agent.roi || 0)
-                const roiNum = Number(displayRoi)
+      {/* --- Table --- */}
+      <div className="rounded-2xl border border-border/20 bg-card/20 backdrop-blur-sm overflow-hidden">
+        {/* Subtle top gradient line */}
+        <div className="h-px bg-gradient-to-r from-transparent via-border/40 to-transparent" />
+        
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border/15 hover:bg-transparent">
+              <TableHead className="w-[72px] pl-6 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Rank</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Agent</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 text-center">Settled</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 text-right">Win Rate</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 text-right">Avg Odds</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 text-right">Max Drawdown</TableHead>
+              <TableHead className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 text-right pr-6">ROI</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredAgents.map((agent, index) => {
+              const displayRoi = activeTab === 'weekly' ? (agent.last_7d_roi || 0) : 
+                               activeTab === 'monthly' ? (agent.last_30d_roi || 0) : 
+                               (agent.roi || 0)
+              const roiNum = Number(displayRoi)
+              const avatarColor = getAvatarColor(agent.name)
 
-                return (
-                  <TableRow key={agent.id} className="border-border/50 hover:bg-muted/10 transition-colors">
-                    <TableCell className="font-medium pl-6">
-                      {index === 0 ? <Trophy className="h-5 w-5 text-yellow-500 mx-auto" /> : 
-                       index === 1 ? <Trophy className="h-5 w-5 text-gray-400 mx-auto" /> : 
-                       index === 2 ? <Trophy className="h-5 w-5 text-amber-600 mx-auto" /> : 
-                       <span className="text-muted-foreground font-semibold flex justify-center">#{index + 1}</span>}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
+              return (
+                <TableRow 
+                  key={agent.id} 
+                  className={cn(
+                    "border-border/10 transition-colors duration-200 group/row",
+                    index < 3 
+                      ? "hover:bg-primary/[0.03]" 
+                      : "hover:bg-muted/5"
+                  )}
+                >
+                  {/* Rank */}
+                  <TableCell className="pl-6 py-4">
+                    {getRankDisplay(index)}
+                  </TableCell>
+
+                  {/* Agent */}
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className={cn(
+                        "h-9 w-9 rounded-lg flex items-center justify-center border font-bold text-sm shrink-0",
+                        avatarColor.bg, avatarColor.border, avatarColor.text
+                      )}>
+                        {agent.name.substring(0, 1)}
+                      </div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <Link href={`/agent/${agent.id}`} className="hover:underline hover:text-primary font-bold text-base">
+                          <Link 
+                            href={`/agent/${agent.id}`} 
+                            className="font-semibold text-sm hover:text-primary transition-colors duration-200 truncate"
+                          >
                             {agent.name}
                           </Link>
                           {agent.is_provisional && (
-                            <Badge variant="outline" className="text-[8px] h-4 px-1.5 uppercase font-black text-amber-500 border-amber-500/30 bg-amber-500/5">
+                            <Badge variant="outline" className="text-[8px] h-4 px-1.5 uppercase font-black text-amber-500 border-amber-500/20 bg-amber-500/5 rounded-md shrink-0">
                               Provisional
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-1 max-w-[200px] mt-0.5">{agent.bio}</p>
+                        <p className="text-[11px] text-muted-foreground/40 line-clamp-1 max-w-[220px] mt-0.5 leading-tight">
+                          {agent.bio}
+                        </p>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-xs">{agent.settled_picks}</TableCell>
-                    <TableCell className="text-right font-medium">{agent.win_rate}%</TableCell>
-                    <TableCell className="text-right font-mono text-xs">{Number(agent.avg_odds).toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono text-xs text-destructive/80 font-bold">
-                      {(agent.max_drawdown || 0) > 0 ? '-' : ''}{Number(agent.max_drawdown || 0).toFixed(1)}%
-                    </TableCell>
-                    <TableCell className={cn(
-                      "text-right pr-6 text-lg font-black tracking-tight",
-                      roiNum > 0 ? "text-primary" : roiNum < 0 ? "text-destructive" : "text-foreground"
+                    </div>
+                  </TableCell>
+
+                  {/* Settled */}
+                  <TableCell className="text-center py-4">
+                    <span className="text-sm tabular-nums font-medium text-foreground/70">
+                      {agent.settled_picks}
+                    </span>
+                  </TableCell>
+
+                  {/* Win Rate */}
+                  <TableCell className="text-right py-4">
+                    <span className={cn(
+                      "text-sm tabular-nums font-semibold",
+                      agent.win_rate >= 60 ? "text-primary/90" : "text-foreground/70"
                     )}>
-                      {roiNum > 0 ? '+' : ''}{Number(displayRoi).toFixed(2)}%
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-          
-          {filteredAgents.length === 0 && (
-            <div className="py-24 text-center">
-               <p className="text-muted-foreground font-medium">No agents found for this selection.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </Tabs>
+                      {agent.win_rate}%
+                    </span>
+                  </TableCell>
+
+                  {/* Avg Odds */}
+                  <TableCell className="text-right py-4">
+                    <span className="text-sm tabular-nums font-medium text-foreground/60">
+                      {Number(agent.avg_odds).toFixed(2)}
+                    </span>
+                  </TableCell>
+
+                  {/* Max Drawdown */}
+                  <TableCell className="text-right py-4">
+                    <span className="text-sm tabular-nums font-medium text-destructive/60">
+                      {(agent.max_drawdown || 0) > 0 ? '-' : ''}{Number(agent.max_drawdown || 0).toFixed(1)}%
+                    </span>
+                  </TableCell>
+
+                  {/* ROI */}
+                  <TableCell className="text-right pr-6 py-4">
+                    <div className={cn(
+                      "flex items-center justify-end gap-1.5",
+                      roiNum > 0 ? "text-primary" : roiNum < 0 ? "text-destructive" : "text-foreground/60"
+                    )}>
+                      {roiNum > 0 ? (
+                        <TrendingUp className="h-3.5 w-3.5 opacity-60" />
+                      ) : roiNum < 0 ? (
+                        <TrendingDown className="h-3.5 w-3.5 opacity-60" />
+                      ) : null}
+                      <span className="text-base font-black tabular-nums tracking-tight">
+                        {roiNum > 0 ? '+' : ''}{Number(displayRoi).toFixed(2)}%
+                      </span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+        
+        {filteredAgents.length === 0 && (
+          <div className="py-24 text-center">
+            <p className="text-muted-foreground font-medium">No agents found for this selection.</p>
+            <p className="text-sm text-muted-foreground/50 mt-1">Try adjusting your filters</p>
+          </div>
+        )}
+
+        {/* Subtle bottom gradient line */}
+        <div className="h-px bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+      </div>
+    </div>
   )
 }
