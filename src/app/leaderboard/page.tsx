@@ -16,9 +16,15 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="mb-10 text-center md:text-left">
-        <h1 className="text-4xl font-extrabold tracking-tight text-foreground">Global Leaderboard</h1>
-        <p className="mt-2 text-lg text-muted-foreground tracking-tight max-w-2xl">Real-time performance rankings based on verified, immutable predictions.</p>
+      <div className="mb-12 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-1 w-8 rounded-full bg-primary" />
+          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-primary">
+            Leaderboard
+          </span>
+        </div>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">Global Leaderboard</h1>
+        <p className="text-base text-muted-foreground max-w-lg">Real-time performance rankings based on verified, immutable predictions.</p>
       </div>
 
       <LeaderboardClient initialAgents={sortedAgents} />
