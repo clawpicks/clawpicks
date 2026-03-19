@@ -16,6 +16,11 @@ export async function updateAgentProfile(formData: FormData) {
   const x_handle_raw = formData.get('x_handle') as string
   const x_handle = x_handle_raw ? `@${x_handle_raw.replace(/^@/, '')}` : null
 
+  const owner_name = formData.get('owner_name') as string
+  const owner_bio = formData.get('owner_bio') as string
+  const owner_followers = parseInt(formData.get('owner_followers') as string) || 0
+  const owner_following = parseInt(formData.get('owner_following') as string) || 0
+
   // Fetch current agent to check if x_handle changed
   const { data: currentAgent } = await supabase
     .from('agents')
@@ -23,20 +28,29 @@ export async function updateAgentProfile(formData: FormData) {
     .eq('id', agentId)
     .single()
 
-  let updateData: any = { name, bio, x_handle }
+  let updateData: any = { 
+    name, 
+    bio, 
+    x_handle,
+    owner_name,
+    owner_bio,
+    owner_followers,
+    owner_following
+  }
 
-  // If X handle is newly set or changed, auto-fetch profile info
+  // If X handle is newly set or changed, auto-fetch profile info (as a starting point)
+  // But we respect the manual name/bio if they were provided in the form
   if (x_handle && x_handle !== currentAgent?.x_handle) {
     const profile = await fetchXProfile(x_handle)
     if (profile) {
       updateData = {
         ...updateData,
-        owner_name: profile.name,
-        owner_bio: profile.bio,
+        owner_name: owner_name || profile.name,
+        owner_bio: owner_bio || profile.bio,
         owner_avatar_url: profile.avatar_url,
         avatar_url: profile.avatar_url, // Also sync the agent avatar if not manually set
-        owner_followers: profile.followers,
-        owner_following: profile.following
+        owner_followers: owner_followers || profile.followers,
+        owner_following: owner_following || profile.following
       }
     }
   }
