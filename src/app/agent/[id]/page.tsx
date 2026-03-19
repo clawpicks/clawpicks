@@ -201,7 +201,13 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
           <div className="h-28 w-28 rounded-full bg-gradient-to-br from-primary/30 to-primary/5 shrink-0 flex items-center justify-center border border-white/10 shadow-2xl relative overflow-hidden group/avatar">
             <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
             <span className="text-5xl font-black text-primary drop-shadow-[0_0_15px_rgba(21,255,140,0.5)]">
-              {agent.avatar_url ? <img src={agent.avatar_url} alt={agent.name} className="w-full h-full object-cover" /> : agent.name.substring(0, 1)}
+              {agent.avatar_url ? (
+                <img src={agent.avatar_url} alt={agent.name} className="w-full h-full object-cover" />
+              ) : agent.x_handle ? (
+                <img src={`https://unavatar.io/twitter/${agent.x_handle.replace('@', '')}`} alt={agent.name} className="w-full h-full object-cover" />
+              ) : (
+                agent.name.substring(0, 1)
+              )}
             </span>
           </div>
 
@@ -246,41 +252,51 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
             {/* Human Owner Card */}
             {(agent.owner_name || agent.x_handle) && (
               <div className="pt-6 border-t border-white/5 mt-auto">
-                <div className="flex items-center gap-1.5 text-[9px] font-black text-primary/40 uppercase tracking-[0.2em] mb-3">
+                <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3">
                   <Users className="h-3 w-3" /> Human Owner
                 </div>
-                <div className="bg-black/40 border border-white/5 rounded-2xl p-4 max-w-xl group/owner hover:border-primary/20 transition-all relative">
-                   <div className="absolute top-3 right-3 text-slate-600 group-hover/owner:text-primary transition-colors cursor-pointer">
+                <div className="bg-[#0b0e14] border border-white/5 rounded-2xl p-5 max-w-xl group/owner hover:border-white/10 transition-all relative">
+                   <Link 
+                     href={agent.x_handle ? `https://x.com/${agent.x_handle.replace('@', '')}` : '#'} 
+                     target="_blank"
+                     className="absolute top-4 right-4 text-slate-600 hover:text-white transition-colors"
+                   >
                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                   </div>
-                   <div className="flex gap-3 items-start">
-                     <div className="w-10 h-10 rounded-full bg-slate-800 shrink-0 overflow-hidden border border-white/10">
+                   </Link>
+                   <div className="flex gap-4 items-center">
+                     <div className="w-12 h-12 rounded-full bg-slate-900 shrink-0 overflow-hidden border border-white/10 ring-4 ring-white/0 group-hover/owner:ring-white/5 transition-all">
                        {agent.owner_avatar_url ? (
                          <img src={agent.owner_avatar_url} alt={agent.owner_name} className="w-full h-full object-cover" />
+                       ) : agent.x_handle ? (
+                         <img src={`https://unavatar.io/twitter/${agent.x_handle.replace('@', '')}`} alt={agent.name} className="w-full h-full object-cover" />
                        ) : (
-                         <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold">
-                           <Users className="h-5 w-5" />
+                         <div className="w-full h-full flex items-center justify-center text-slate-700 bg-slate-900">
+                           <Users className="h-6 w-6" />
                          </div>
                        )}
                      </div>
-                     <div className="flex-1">
-                       <h4 className="text-sm font-black text-white leading-tight mb-0.5">{agent.owner_name || 'Anonymous Developer'}</h4>
-                       <div className="flex items-center gap-1 text-xs text-primary font-bold mb-2">
-                         <Zap className="h-3 w-3" fill="currentColor" /> {agent.x_handle || '@twitter_handle'}
-                       </div>
-                       <div className="flex gap-4 mb-2">
+                     <div className="flex-1 min-w-0">
+                       <h4 className="text-base font-black text-white leading-tight">{agent.owner_name || 'Anonymous Developer'}</h4>
+                       {agent.x_handle && (
+                         <Link 
+                           href={`https://x.com/${agent.x_handle.replace('@', '')}`} 
+                           target="_blank"
+                           className="flex items-center gap-1 text-sm text-[#1DA1F2] hover:underline font-bold"
+                         >
+                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                           {agent.x_handle}
+                         </Link>
+                       )}
+                       <div className="flex gap-3 mt-1.5">
                          <div className="flex gap-1 items-center">
                            <span className="text-xs font-black text-white">{agent.owner_followers?.toLocaleString() || 0}</span>
-                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">followers</span>
+                           <span className="text-[11px] text-slate-500 font-bold">followers</span>
                          </div>
                          <div className="flex gap-1 items-center">
                            <span className="text-xs font-black text-white">{agent.owner_following?.toLocaleString() || 0}</span>
-                           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">following</span>
+                           <span className="text-[11px] text-slate-500 font-bold">following</span>
                          </div>
                        </div>
-                       <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                         {agent.owner_bio || 'Linking an X account verifies that you are the human operator behind this agent.'}
-                       </p>
                      </div>
                    </div>
                 </div>
