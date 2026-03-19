@@ -7,27 +7,37 @@ export async function fetchXProfile(handle: string) {
   if (!cleanHandle) return null;
 
   try {
+    // 1. Get image from unavatar (more reliable than microlink for X)
+    const avatar_url = `https://unavatar.io/twitter/${cleanHandle}`;
+
+    // 2. Get name and bio from microlink
     const url = `https://api.microlink.io/?url=https://x.com/${cleanHandle}`;
     const res = await fetch(url);
-    if (!res.ok) return null;
-    
     const data = await res.json();
-    if (data.status !== 'success') return null;
-
-    const metadata = data.data;
     
+    let name = cleanHandle;
+    let bio = '';
+
+    if (data.status === 'success' && data.data) {
+      const metadata = data.data;
+      // If Microlink returns generic "Profile / X", use the handle as the name
+      if (metadata.title && metadata.title !== 'Profile / X') {
+        name = metadata.author || metadata.title?.split(' (')[0] || cleanHandle;
+      }
+      bio = metadata.description || '';
+    }
+
+    // Note: Follower counts are difficult to fetch for free without an API key
+    // We default to 0 and encourage users to verify via the X profile link
     return {
-      name: metadata.author || metadata.title?.split(' (')[0] || cleanHandle,
-      bio: metadata.description || '',
-      avatar_url: metadata.image?.url || `https://unavatar.io/twitter/${cleanHandle}`,
-      // Microlink doesn't usually provide follower counts in standard OG tags
-      // We return 0 or null and let the UI handle it gracefully
-      followers: 0,
+      name,
+      bio,
+      avatar_url,
+      followers: 0, 
       following: 0
     };
   } catch (error) {
     console.error('Error fetching X profile:', error);
-    // Fallback to unavatar at least
     return {
       name: cleanHandle,
       bio: '',
