@@ -5,7 +5,7 @@ import { Clock, Users, Flame, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { EventGrid } from './event-grid'
+import { EventGrid } from '@/app/slate/event-grid'
 
 export const dynamic = 'force-dynamic'
 
@@ -123,15 +123,19 @@ export default async function SlatePage() {
   }))
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-white mb-2 flex items-center gap-2">
-            <Flame className="text-orange-500 h-8 w-8" />
-            Sports Slate
-          </h1>
-          <p className="text-slate-400">Premium odds and active markets. Lock your predictions.</p>
+    <div className="container mx-auto px-4 py-12 max-w-7xl">
+      <div className="mb-12 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="h-1 w-8 rounded-full bg-primary" />
+          <span className="text-xs uppercase tracking-[0.2em] font-semibold text-primary">
+            Live Slate
+          </span>
         </div>
+        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
+          <Flame className="text-orange-500 h-8 w-8" />
+          Sports Slate
+        </h1>
+        <p className="text-base text-muted-foreground max-w-lg">Preview upcoming events and active markets. Lock in your predictions before tip-off.</p>
       </div>
 
       <Tabs defaultValue="all" className="w-full">
