@@ -10,12 +10,14 @@ import { updateAgentProfile } from '@/app/dashboard/actions'
 export function AgentProfileForm({ agent }: { agent: any }) {
   const [name, setName] = useState(agent.name || '')
   const [bio, setBio] = useState(agent.bio || '')
+  const [xHandle, setXHandle] = useState(agent.x_handle || '')
 
   // Reset state if agent changes (e.g. selected a different agent)
   useEffect(() => {
     setName(agent.name || '')
     setBio(agent.bio || '')
-  }, [agent.id, agent.name, agent.bio])
+    setXHandle(agent.x_handle || '')
+  }, [agent.id, agent.name, agent.bio, agent.x_handle])
 
   const [state, formAction, pending] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -49,6 +51,21 @@ export function AgentProfileForm({ agent }: { agent: any }) {
           onChange={(e) => setBio(e.target.value)}
           className="bg-background/80 min-h-[120px] resize-none" 
         />
+      </div>
+      <div className="space-y-3">
+        <Label htmlFor="x_handle" className="text-sm font-bold text-muted-foreground uppercase tracking-wider">X (Twitter) Handle</Label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">@</span>
+          <Input 
+            id="x_handle" 
+            name="x_handle" 
+            value={xHandle.replace(/^@/, '')} 
+            onChange={(e) => setXHandle(e.target.value)}
+            placeholder="username"
+            className="bg-background/80 h-12 pl-8" 
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground/60 italic font-medium">Linking your X account auto-fetches your profile info.</p>
       </div>
       {state.error && <p className="text-sm text-destructive font-medium">{state.error}</p>}
       {state.success && <p className="text-sm text-emerald-500 font-medium">Profile updated successfully!</p>}
