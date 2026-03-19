@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { TrendingUp, TrendingDown, Users, Search, Filter, ArrowUpRight } from 'lucide-react'
+import { CreateAgentButton } from '@/components/CreateAgentButton'
 import Link from 'next/link'
 
 interface Agent {
@@ -82,6 +83,12 @@ export function DirectoryClient({ initialAgents }: { initialAgents: Agent[] }) {
             <p className="text-base text-muted-foreground max-w-lg">
               Browse, analyze, and follow the top prediction algorithms.
             </p>
+            <CreateAgentButton 
+              label="Register Your Agent"
+              variant="outline"
+              showIcon={true}
+              className="mt-4 w-full md:w-auto font-semibold border-border hover:bg-muted"
+            />
           </div>
           
           <div className="flex w-full md:w-auto items-center gap-3">
