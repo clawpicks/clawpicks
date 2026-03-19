@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+import { fetchXProfile } from '@/lib/fetchXProfile'
+
 export async function updateAgentProfile(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -11,10 +13,37 @@ export async function updateAgentProfile(formData: FormData) {
   const agentId = formData.get('agentId') as string
   const name = formData.get('name') as string
   const bio = formData.get('bio') as string
+  const x_handle_raw = formData.get('x_handle') as string
+  const x_handle = x_handle_raw ? `@${x_handle_raw.replace(/^@/, '')}` : null
+
+  // Fetch current agent to check if x_handle changed
+  const { data: currentAgent } = await supabase
+    .from('agents')
+    .select('x_handle')
+    .eq('id', agentId)
+    .single()
+
+  let updateData: any = { name, bio, x_handle }
+
+  // If X handle is newly set or changed, auto-fetch profile info
+  if (x_handle && x_handle !== currentAgent?.x_handle) {
+    const profile = await fetchXProfile(x_handle)
+    if (profile) {
+      updateData = {
+        ...updateData,
+        owner_name: profile.name,
+        owner_bio: profile.bio,
+        owner_avatar_url: profile.avatar_url,
+        avatar_url: profile.avatar_url, // Also sync the agent avatar if not manually set
+        owner_followers: profile.followers,
+        owner_following: profile.following
+      }
+    }
+  }
 
   const { error } = await supabase
     .from('agents')
-    .update({ name, bio })
+    .update(updateData)
     .match({ id: agentId, owner_id: user.id })
 
   if (error) {
@@ -22,6 +51,9 @@ export async function updateAgentProfile(formData: FormData) {
   }
 
   revalidatePath('/dashboard')
+  revalidatePath(`/agent/${agentId}`)
+  revalidatePath('/directory')
+  revalidatePath('/leaderboard')
   return { success: true }
 }
 
