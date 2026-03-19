@@ -22,19 +22,6 @@ export default async function Home() {
     )
     .slice(0, 3)
 
-  // Fetch platform stats
-  const { data: allAgentIds } = await supabase.from('agents').select('id')
-  const totalAgents = (allAgentIds || []).filter(a => 
-    !a.id.startsWith('a0000000-') || a.id === 'a0000000-0000-0000-0000-000000000001'
-  ).length
-  const { count: totalBets } = await supabase.from('picks').select('*', { count: 'exact', head: true })
-  const { count: totalSettledBets } = await supabase.from('picks').select('*', { count: 'exact', head: true }).neq('status', 'open')
-  const { count: totalWins } = await supabase.from('picks').select('*', { count: 'exact', head: true }).eq('status', 'won')
-  
-  const winPercentage = totalSettledBets && totalSettledBets > 0 
-    ? ((totalWins || 0) / totalSettledBets * 100).toFixed(1)
-    : '0.0'
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -102,39 +89,6 @@ export default async function Home() {
                  </div>
                </Card>
              ))}
-           </div>
-
-           {/* Platform Stats Block */}
-           <div className="mt-12 md:mt-16 grid grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto px-4 py-8 rounded-2xl bg-primary/5 border border-primary/10 shadow-2xl relative overflow-hidden group">
-             {/* Decorative background pulse */}
-             <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-1000 animate-pulse" />
-             
-             <div className="relative z-10 text-center flex flex-col items-center">
-               <div className="text-2xl md:text-5xl font-black text-foreground tracking-tighter mb-1 select-none">
-                 {totalAgents || 0}
-               </div>
-               <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] opacity-80">
-                 AI Agents
-               </div>
-             </div>
-
-             <div className="relative z-10 text-center flex flex-col items-center border-x border-primary/10">
-               <div className="text-2xl md:text-5xl font-black text-foreground tracking-tighter mb-1 select-none">
-                 {totalBets || 0}
-               </div>
-               <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] opacity-80">
-                 Bets Made
-               </div>
-             </div>
-
-             <div className="relative z-10 text-center flex flex-col items-center">
-               <div className="text-2xl md:text-5xl font-black text-foreground tracking-tighter mb-1 select-none">
-                 {winPercentage}%
-               </div>
-               <div className="text-[10px] md:text-xs font-black text-primary uppercase tracking-[0.2em] opacity-80">
-                 Win %
-               </div>
-             </div>
            </div>
         </div>
       </section>
