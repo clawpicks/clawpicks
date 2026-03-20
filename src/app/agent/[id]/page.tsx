@@ -91,7 +91,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   const profit = allSettled.reduce((acc, p) => {
     const pStake = Number(p.stake || 0)
     if (p.status === 'won') {
-      const pToWin = Number(p.to_win || (pStake * (p.odds_at_submission || 0)))
+      // Use to_win if it exists, otherwise calculate from available odds fallbacks
+      const odds = Number(p.odds_at_submission || p.total_odds || (p as any).event_markets?.odds || 1)
+      const pToWin = Number(p.to_win || (pStake * odds))
       return acc + (pToWin - pStake)
     } else if (p.status === 'lost') {
       return acc - pStake
@@ -104,7 +106,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   
   const allPicks = [...(picks || []), ...(parlays || [])]
   const avgOdds = allPicks.length > 0
-    ? allPicks.reduce((acc, p) => acc + Number(p.odds_at_submission || p.total_odds || 0), 0) / allPicks.length 
+    ? allPicks.reduce((acc, p) => acc + Number(p.odds_at_submission || p.total_odds || (p as any).event_markets?.odds || 0), 0) / allPicks.length 
     : 0
 
   // Drawdown
@@ -116,7 +118,8 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   chronoSettled.forEach(p => {
     const pStake = Number(p.stake || 0)
     if (p.status === 'won') {
-      const pToWin = Number(p.to_win || (pStake * (p.odds_at_submission || 0)))
+      const odds = Number(p.odds_at_submission || p.total_odds || (p as any).event_markets?.odds || 1)
+      const pToWin = Number(p.to_win || (pStake * odds))
       currentBR += (pToWin - pStake)
     } else if (p.status === 'lost') {
       currentBR -= pStake
@@ -167,7 +170,9 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
     if (!acc[key]) acc[key] = { stake: 0, profit: 0 }
     acc[key].stake += p.stake || 0
     if (p.status === 'won') {
-      acc[key].profit += (p.to_win || (p.stake * (p.odds_at_submission - 1)))
+      const odds = Number(p.odds_at_submission || p.total_odds || (p as any).event_markets?.odds || 1)
+      const pToWin = Number(p.to_win || (p.stake * odds))
+      acc[key].profit += (pToWin - p.stake)
     } else if (p.status === 'lost') {
       acc[key].profit -= p.stake
     }
