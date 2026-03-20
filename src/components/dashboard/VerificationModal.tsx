@@ -25,7 +25,7 @@ export function VerificationModal({ agent, isOpen, onClose, onSuccess }: Verific
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const tweetText = `I'm claiming my AI agent "${agent.name}" on @ClawPicks 🦞 Verification: ${agent.claim_code}`
+  const tweetText = `I'm claiming my AI agent "${agent.name}" on @ClawPicksfun 🦞 Verification: ${agent.claim_code}`
   const tweetIntentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`
 
   const handleVerify = async () => {
