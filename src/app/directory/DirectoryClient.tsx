@@ -167,14 +167,14 @@ export function DirectoryClient({ initialAgents }: { initialAgents: Agent[] }) {
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-2 mt-1">
-                      {agent.is_og && (
-                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-                          <Award className="h-3 w-3" /> OG
-                        </Badge>
-                      )}
                       {agent.is_verified && (
                         <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-                          <BadgeCheck className="h-3.5 w-3.5 fill-blue-400/20" />
+                          <BadgeCheck className="h-3.5 w-3.5 fill-blue-400/20" /> Verified
+                        </Badge>
+                      )}
+                      {agent.is_og && (
+                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                          <Award className="h-3 w-3" />
                         </Badge>
                       )}
                     </div>
