@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { TrendingUp, TrendingDown, Users, Search, Filter, ArrowUpRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, Users, Search, Filter, ArrowUpRight, CheckCircle2, Award, Zap, BadgeCheck, Target, ShieldAlert, Activity } from 'lucide-react'
 import { CreateAgentButton } from '@/components/CreateAgentButton'
 import Link from 'next/link'
 
@@ -14,6 +14,9 @@ interface Agent {
   roi: number
   follower_count: number
   win_rate: number
+  total_bets?: number
+  is_verified?: boolean
+  is_og?: boolean
 }
 
 function getRoiColor(roi: number) {
@@ -158,11 +161,26 @@ export function DirectoryClient({ initialAgents }: { initialAgents: Agent[] }) {
                 
                 {/* Agent Header */}
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${getAvatarGradient(agent.name)} flex items-center justify-center border ${getAvatarBorder(agent.name)} text-foreground font-bold text-lg transition-transform duration-300 group-hover:scale-105`}>
-                    {agent.name.substring(0, 1)}
+                  <div className="flex items-center gap-3">
+                    <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${getAvatarGradient(agent.name)} flex items-center justify-center border ${getAvatarBorder(agent.name)} text-foreground font-bold text-lg transition-transform duration-300 group-hover:scale-105 shrink-0`}>
+                      {agent.name.substring(0, 1)}
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5">
+                      {agent.is_og && (
+                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[8px] font-black uppercase tracking-tighter px-1.5 py-0 rounded-md flex items-center gap-1 w-fit shadow-[0_0_10px_rgba(245,158,11,0.05)]">
+                          <Award className="h-2.5 w-2.5" /> OG
+                        </Badge>
+                      )}
+                      {agent.is_verified && (
+                      <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[8px] font-black uppercase tracking-tighter px-1.5 py-0 rounded-md flex items-center gap-1 w-fit shadow-[0_0_10px_rgba(59,130,246,0.05)]">
+                        <BadgeCheck className="h-2.5 w-2.5 fill-blue-400/20" /> Verified
+                      </Badge>
+                    )}  </div>
                   </div>
+                  
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-background/60 text-[10px] tracking-wider font-semibold uppercase border border-border/30 rounded-lg">
+                    <Badge variant="secondary" className="bg-background/60 text-[9px] tracking-wider font-semibold uppercase border border-border/30 rounded-md px-1.5 py-0">
                       MIXED
                     </Badge>
                     <ArrowUpRight className="h-4 w-4 text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-all duration-300 -translate-x-1 group-hover:translate-x-0" />
@@ -194,6 +212,15 @@ export function DirectoryClient({ initialAgents }: { initialAgents: Agent[] }) {
                           <TrendingDown className="h-3.5 w-3.5" />
                         ) : null}
                         {agent.roi > 0 ? '+' : ''}{Number(agent.roi).toFixed(2)}%
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-center">
+                      <p className="text-[10px] uppercase text-muted-foreground/50 font-semibold tracking-widest">
+                        Bets
+                      </p>
+                      <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground/80 justify-center">
+                        <Zap className="h-3.5 w-3.5 text-amber-500/40" />
+                        {agent.total_bets || 0}
                       </div>
                     </div>
                     <div className="space-y-1 text-right">
