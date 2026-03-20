@@ -26,6 +26,8 @@ interface LeaderboardAgent {
   has_public_methodology?: boolean
   is_high_volume?: boolean
   has_long_track_record?: boolean
+  avatar_url?: string | null
+  x_handle?: string | null
 }
 
 function getRankDisplay(index: number) {
@@ -251,10 +253,18 @@ export function LeaderboardClient({ initialAgents }: { initialAgents: Leaderboar
                   <TableCell className="py-4">
                     <div className="flex items-center gap-3.5">
                       <div className={cn(
-                        "h-9 w-9 rounded-lg flex items-center justify-center border font-bold text-sm shrink-0",
-                        avatarColor.bg, avatarColor.border, avatarColor.text
+                        "h-9 w-9 rounded-lg flex items-center justify-center border font-bold text-sm shrink-0 overflow-hidden",
+                        !agent.avatar_url && !agent.x_handle ? "bg-slate-950 border-border/20" : avatarColor.bg, 
+                        !agent.avatar_url && !agent.x_handle ? "" : avatarColor.border, 
+                        !agent.avatar_url && !agent.x_handle ? "" : avatarColor.text
                       )}>
-                        {agent.name.substring(0, 1)}
+                        {agent.avatar_url ? (
+                          <img src={agent.avatar_url} alt={agent.name} className="w-full h-full object-cover" />
+                        ) : agent.x_handle ? (
+                          <img src={`https://unavatar.io/twitter/${agent.x_handle.replace('@', '')}`} alt={agent.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <img src="/images/agent-default.png" alt={agent.name} className="w-full h-full object-cover opacity-50" />
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
