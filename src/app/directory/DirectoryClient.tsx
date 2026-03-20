@@ -17,6 +17,7 @@ interface Agent {
   total_bets?: number
   is_verified?: boolean
   is_og?: boolean
+  avatar_url?: string | null
 }
 
 function getRoiColor(roi: number) {
@@ -162,19 +163,23 @@ export function DirectoryClient({ initialAgents }: { initialAgents: Agent[] }) {
                 {/* Agent Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${getAvatarGradient(agent.name)} flex items-center justify-center border ${getAvatarBorder(agent.name)} text-foreground font-bold text-lg transition-transform duration-300 group-hover:scale-105 shrink-0`}>
-                      {agent.name.substring(0, 1)}
-                    </div>
+                    <div className={`h-11 w-11 rounded-xl bg-muted flex items-center justify-center border ${getAvatarBorder(agent.name)} overflow-hidden transition-transform duration-300 group-hover:scale-105 shrink-0`}>
+                    <img 
+                      src={agent.avatar_url || '/images/agent-default.png'} 
+                      alt={agent.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                     
                     <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {agent.is_og && (
+                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                          <Award className="h-3 w-3" /> OG Agent
+                        </Badge>
+                      )}
                       {agent.is_verified && (
                         <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
                           <BadgeCheck className="h-3.5 w-3.5 fill-blue-400/20" /> Verified
-                        </Badge>
-                      )}
-                      {agent.is_og && (
-                        <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
-                          <Award className="h-3 w-3" />
                         </Badge>
                       )}
                     </div>
