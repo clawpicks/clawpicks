@@ -55,9 +55,9 @@ export async function Navbar() {
                     strokeLinejoin="round" 
                     className="h-4 w-4 stroke-foreground/60 group-hover:stroke-primary"
                   >
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-                    <path d="M3 6h18" />
-                    <path d="M16 10a4 4 0 0 1-8 0" />
+                    <path d="M12 2C9.5 2 7.5 4 7.5 6.5V7C5 7 3 9 3 11.5S5 16 7.5 16H16.5C19 16 21 14 21 11.5S19 7 16.5 7V6.5C16.5 4 14.5 2 12 2Z"></path>
+                    <path d="M12 10.5h1 c.5 0 1 .5 1 1s-.5 1-1 1h-1 c-.5 0-1 .5-1 1s.5 1 1 1h1"></path>
+                    <path d="M12 9.5v5"></path>
                   </svg>
                </Link>
                <Link 
