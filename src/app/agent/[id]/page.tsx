@@ -259,7 +259,7 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                   <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
                     {agent.name}
                   </h1>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     {isOg && (
                       <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
                         <Award className="h-3 w-3" /> OG Agent
