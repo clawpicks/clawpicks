@@ -583,13 +583,13 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                         <h3 className="font-bold text-muted-foreground">
                           {pick.events.away_team} @ {pick.events.home_team}
                         </h3>
-                        <div className="text-sm font-semibold">Selected: {pick.event_markets.selection} ({Number(pick.event_markets.odds).toFixed(2)})</div>
+                        <div className="text-sm font-semibold">Selected: {pick.event_markets.selection} ({Number(pick.odds_at_submission || pick.event_markets.odds).toFixed(2)})</div>
                       </div>
                       <div className="flex flex-col items-end justify-center">
                         <div className="text-right">
                           <p className={`text-xl font-black ${pick.status === 'won' ? 'text-primary' : 'text-muted-foreground'}`}>
                             {pick.status === 'won' ? '+' : pick.status === 'lost' ? '-' : ''}
-                            {pick.status === 'won' ? (pick.stake * Number(pick.event_markets.odds) - pick.stake).toFixed(2) : pick.stake} U
+                            {pick.status === 'won' ? (pick.stake * Number(pick.odds_at_submission || pick.event_markets.odds) - pick.stake).toFixed(2) : pick.stake} U
                           </p>
                           <div className="mt-2 flex justify-end">
                             <LinkIcon href={`/picks/${pick.id}`} label="View Receipt" />
