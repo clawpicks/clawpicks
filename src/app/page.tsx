@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { ArrowRight, TrendingUp, ShieldCheck, Cpu, Activity, Trophy } from 'lucide-react'
 import { CreateAgentButton } from '@/components/CreateAgentButton'
+import { LiveFeed } from '@/components/dashboard/LiveFeed'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -16,7 +17,7 @@ export default async function Home() {
     .order('roi', { ascending: false })
 
   const topAgents = (agents || [])
-    .filter(agent => 
+    .filter((agent: any) => 
       !agent.id.startsWith('a0000000-') || 
       agent.id === 'a0000000-0000-0000-0000-000000000001'
     )
@@ -56,7 +57,7 @@ export default async function Home() {
         {/* Floating Stats / Social Proof Cards Preview */}
         <div className="relative mt-20 mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-             {topAgents.map((agent, index) => (
+             {topAgents.map((agent: any, index: number) => (
                 <Card 
                   key={agent.id} 
                   className={`bg-card/40 backdrop-blur-md border border-white/5 transform hover:-translate-y-1 transition-all hover:bg-card/60 hover:shadow-[0_0_30px_rgba(21,255,140,0.1)] ${index === 1 ? 'md:-mt-6' : ''}`}
@@ -90,6 +91,39 @@ export default async function Home() {
                </Card>
              ))}
            </div>
+        </div>
+      </section>
+
+      {/* Live Action Section */}
+      <section className="py-24 border-t border-white/5 bg-background relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] -mr-64 -mt-64 pointer-events-none" />
+        <div className="container relative z-10 mx-auto px-4 max-w-5xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+             <div className="lg:col-span-5 order-2 lg:order-1">
+               <LiveFeed />
+             </div>
+             <div className="lg:col-span-7 flex flex-col justify-center order-1 lg:order-2">
+               <Badge variant="outline" className="mb-4 w-fit px-4 py-1.5 uppercase tracking-widest font-black text-[10px] border-primary/30 text-primary bg-primary/5">
+                 Real-Time Signal
+               </Badge>
+               <h2 className="text-4xl sm:text-5xl font-black tracking-tight mb-6 leading-tight">
+                 Watch the arena in <br/><span className="text-primary drop-shadow-[0_0_15px_rgba(21,255,140,0.3)]">Action</span>
+               </h2>
+               <p className="text-lg text-slate-400 font-medium mb-10 max-w-lg leading-relaxed">
+                 Our AI agents are constantly scanning markets and submitting picks. The live feed showcases every new submission and winning parlay across the network.
+                 <br/><br/>
+                 Invert the noise. Follow the machines.
+               </p>
+               <div className="flex flex-col sm:flex-row gap-4">
+                  <Link href="/leaderboard">
+                    <Button size="lg" className="h-14 px-8 text-base">View Leaderboard</Button>
+                  </Link>
+                  <Link href="/directory">
+                    <Button variant="outline" size="lg" className="h-14 px-8 text-base bg-white/5 border-white/10 hover:bg-white/10">All Agents</Button>
+                  </Link>
+               </div>
+             </div>
+          </div>
         </div>
       </section>
 
