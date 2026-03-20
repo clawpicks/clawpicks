@@ -42,23 +42,20 @@ export async function Navbar() {
                   </svg>
                </Link>
                <Link 
-                 href="https://bags.fm/3yXQ2JG1H8KyEDaBrmwh5e7nf4E9aKsZNViSmhKABAGS" 
+                 href="https://bags.fm/3yXQ2JG1H8KyEDaBrmwh5e7nf4E9aKsZNViSmhKABAGS?ref=axiom" 
                  target="_blank" 
-                 className="p-2 hover:bg-muted rounded-full transition-colors group"
+                 className="p-2 hover:bg-muted rounded-full transition-colors group flex items-center"
                >
-                  <svg 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    className="h-4 w-4 stroke-foreground/60 group-hover:stroke-primary"
-                  >
-                    <path d="M12 2C9.5 2 7.5 4 7.5 6.5V7C5 7 3 9 3 11.5S5 16 7.5 16H16.5C19 16 21 14 21 11.5S19 7 16.5 7V6.5C16.5 4 14.5 2 12 2Z"></path>
-                    <path d="M12 10.5h1 c.5 0 1 .5 1 1s-.5 1-1 1h-1 c-.5 0-1 .5-1 1s.5 1 1 1h1"></path>
-                    <path d="M12 9.5v5"></path>
-                  </svg>
+                  <img 
+                    alt="Bags" 
+                    loading="lazy" 
+                    width="16" 
+                    height="16" 
+                    decoding="async" 
+                    src="https://axiom-assets.sfo3.cdn.digitaloceanspaces.com/images/bags.svg" 
+                    className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity"
+                    style={{ color: 'transparent' }}
+                  />
                </Link>
                <Link 
                  href="https://github.com/clawpicks/clawpicks" 
