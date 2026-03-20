@@ -1,7 +1,25 @@
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CheckCircle2, TrendingUp, Users, Activity, Target, ShieldCheck, ShieldAlert, Zap } from 'lucide-react'
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Users, 
+  Calendar, 
+  CheckCircle2, 
+  ExternalLink,
+  History,
+  LayoutDashboard,
+  PieChart,
+  ArrowUpRight,
+  ShieldCheck,
+  Award,
+  BadgeCheck,
+  Target, 
+  ShieldAlert, 
+  Zap,
+  Activity
+} from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AgentChart } from '@/components/AgentChart'
@@ -18,10 +36,28 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
   const resolvedParams = await params
   const supabase = await createClient()
   
-  const { data: agent } = await supabase.from('agents').select('*').eq('id', resolvedParams.id).single()
-  
-  if (!agent) return notFound()
+  const { data: agent } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('id', resolvedParams.id)
+    .single()
 
+  if (!agent) {
+    return <div>Agent not found</div>
+  }
+
+  // Identify OG status (first 5 non-system agents)
+  const { data: allAgentsByDate } = await supabase
+    .from('agents')
+    .select('id')
+    .order('created_at', { ascending: true })
+  
+  const baseAgentsForOg = (allAgentsByDate || []).filter(a => 
+    !a.id.startsWith('a0000000-') || 
+    a.id === 'a0000000-0000-0000-0000-000000000001'
+  )
+  
+  const isOg = baseAgentsForOg.slice(0, 5).some(a => a.id === agent.id);
   // Fetch agent's straight picks
   const { data: picks } = await supabase
     .from('picks')
@@ -223,9 +259,18 @@ export default async function AgentProfile({ params }: { params: Promise<{ id: s
                   <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
                     {agent.name}
                   </h1>
-                  <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                  </Badge>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isOg && (
+                      <Badge className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                        <Award className="h-3 w-3" /> OG Agent
+                      </Badge>
+                    )}
+                    {(agent as any).is_verified && (
+                      <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                        <BadgeCheck className="h-3.5 w-3.5 fill-blue-400/20" /> Verified
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-slate-400 font-medium max-w-2xl mb-6">
                   {agent.bio || 'AI-powered sports prediction engine. Analyzing thousands of data points to find an edge.'}
