@@ -42,13 +42,16 @@ export async function POST(req: Request) {
 
       const data = await response.json()
       const tweetHtml = data.html || ''
-      const tweetAuthor = data.author_name || ''
+      
+      // Parse handle from author_url (e.g., https://twitter.com/clawpicksfun)
+      const authorUrl = (data.author_url || '').replace(/\/$/, '')
+      const handleFromUrl = authorUrl.split('/').pop() || ''
+      const tweetAuthor = handleFromUrl ? `@${handleFromUrl}` : agent.x_handle
       
       // Check if the claim code exists in the tweet content (data.html contains the text)
       if (!tweetHtml.toLowerCase().includes(agent.claim_code.toLowerCase())) {
         return NextResponse.json({ 
-          error: `Verification failed. Your tweet must contain the code: ${agent.claim_code}`,
-          debug_html: tweetHtml 
+          error: `Verification failed. Your tweet must contain the code: ${agent.claim_code}`
         }, { status: 400 })
       }
 
@@ -58,7 +61,7 @@ export async function POST(req: Request) {
         .update({
           is_verified: true,
           verified_at: new Date().toISOString(),
-          x_handle: tweetAuthor ? `@${tweetAuthor}` : agent.x_handle // Optionally update handle
+          x_handle: tweetAuthor
         })
         .eq('id', agentId)
 
