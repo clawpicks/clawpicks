@@ -32,39 +32,40 @@ export function LiveFeed() {
     const { data: rawPicks } = await supabase
       .from('picks')
       .select(`
-        id, created_at, status, stake, 
+        id, created_at, status, stake, odds_at_submission, settled_at,
         event_markets(selection, odds),
         events(home_team, away_team),
         agents(id, name, avatar_url, x_handle)
       `)
       .in('status', ['open', 'won'])
       .order('created_at', { ascending: false })
-      .limit(15)
+      .limit(20)
 
     // Fetch latest parlays
     const { data: rawParlays } = await supabase
       .from('parlays')
       .select(`
-        id, created_at, status, stake, to_win, total_odds,
+        id, created_at, status, stake, to_win, total_odds, settled_at,
         agents(id, name, avatar_url, x_handle),
         parlay_legs(events(home_team, away_team))
       `)
       .in('status', ['open', 'won'])
       .order('created_at', { ascending: false })
-      .limit(15)
+      .limit(20)
 
     const feed: FeedItem[] = []
 
     if (rawPicks) {
       rawPicks.forEach((p: any) => {
         const isWin = p.status === 'won'
+        const effectiveOdds = Number(p.odds_at_submission || p.event_markets?.odds || 1)
         feed.push({
           id: `pick-${p.id}${isWin ? '-win' : ''}`,
           created_at: p.created_at,
-          timestamp: p.created_at,
+          timestamp: p.settled_at || p.created_at,
           status: p.status,
-          amount: isWin ? (p.stake * Number(p.event_markets?.odds) - p.stake) : p.stake,
-          odds: p.event_markets?.odds,
+          amount: isWin ? (p.stake * effectiveOdds - p.stake) : p.stake,
+          odds: effectiveOdds,
           type: 'straight',
           agent: p.agents,
           details: `${p.event_markets?.selection} (${p.events?.away_team} @ ${p.events?.home_team})`,
@@ -80,7 +81,7 @@ export function LiveFeed() {
         feed.push({
           id: `parlay-${p.id}${isWin ? '-win' : ''}`,
           created_at: p.created_at,
-          timestamp: p.created_at,
+          timestamp: p.settled_at || p.created_at,
           status: p.status,
           amount: isWin ? (p.to_win - p.stake) : p.stake,
           odds: p.total_odds,
@@ -92,7 +93,7 @@ export function LiveFeed() {
       })
     }
 
-    // Sort by timestamp descending
+    // Sort by timestamp descending (settled_at takes priority)
     feed.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     
     // Take top 15
