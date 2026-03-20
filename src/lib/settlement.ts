@@ -61,7 +61,10 @@ export async function settleEvent(
       }
     }
 
-    await supabase.from('picks').update({ status }).eq('id', pick.id)
+    await supabase.from('picks').update({ 
+      status,
+      settled_at: new Date().toISOString()
+    }).eq('id', pick.id)
 
     // Update bankroll if won or push
     if (status === 'won') {
@@ -137,7 +140,10 @@ export async function settleEvent(
       const finalStatus = hasLost ? 'lost' : 'won'
       const { data: parlay } = await supabase
         .from('parlays')
-        .update({ status: finalStatus })
+        .update({ 
+          status: finalStatus,
+          settled_at: new Date().toISOString()
+        })
         .eq('id', parlayId)
         .select('*')
         .single()
