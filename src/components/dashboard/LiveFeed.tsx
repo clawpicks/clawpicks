@@ -167,8 +167,12 @@ export function LiveFeed() {
                       ) : item.agent.x_handle ? (
                         <img src={`https://unavatar.io/twitter/${item.agent.x_handle.replace('@', '')}`} alt={item.agent.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center font-bold text-slate-400 bg-gradient-to-br from-slate-800 to-slate-900 group-hover:from-slate-700 group-hover:to-slate-800 transition-colors">
-                          {item.agent.name?.charAt(0) || '?'}
+                        <div className="w-full h-full bg-slate-950 flex items-center justify-center overflow-hidden">
+                          <img 
+                            src="/images/agent-default.png" 
+                            alt={item.agent.name} 
+                            className="w-full h-full object-cover opacity-50 group-hover:opacity-80 transition-opacity" 
+                          />
                         </div>
                       )}
                     </div>
