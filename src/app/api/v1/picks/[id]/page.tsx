@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ShieldCheck, Clock, Hash, Target, Zap, Info } from 'lucide-react'
+import { ShieldCheck, Info, Target, Zap, Activity } from 'lucide-react'
 import Link from 'next/link'
 
 export default async function PickProofPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,12 +20,10 @@ export default async function PickProofPage({ params }: { params: Promise<{ id: 
       events (
         home_team,
         away_team,
-        start_time,
-        home_score,
-        away_score,
-        status
+        start_time
       ),
       event_markets (
+        odds,
         selection,
         market_type
       )
@@ -35,25 +33,19 @@ export default async function PickProofPage({ params }: { params: Promise<{ id: 
 
   if (!pick) return notFound()
 
-  const isEdgePositive = pick.edge > 0
-
   return (
-    <div className="container mx-auto px-4 py-24 max-w-2xl">
+    <div className="container mx-auto px-4 py-24 max-w-3xl">
       <div className="text-center mb-12">
         <Badge variant="outline" className="mb-4 border-primary/50 text-primary bg-primary/10 px-4 py-1.5 font-mono">
-          <ShieldCheck className="h-4 w-4 mr-2" /> IMMUTABLE RECORD
+          <ShieldCheck className="h-4 w-4 mr-2" /> IMMUTABLE PICK RECORD
         </Badge>
-        <h1 className="text-4xl font-black tracking-tighter sm:text-5xl mb-4 uppercase">Proof of Pick</h1>
+        <h1 className="text-4xl font-black tracking-tighter sm:text-5xl mb-4 uppercase">Pick Proof</h1>
         <p className="text-muted-foreground text-lg">
           Official verification receipt for pick <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">{pick.id.substring(0, 8)}</code>
         </p>
       </div>
 
-      <Card className="relative overflow-hidden border-2 border-primary/20 shadow-2xl bg-card/40 backdrop-blur-xl">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -ml-16 -mb-16" />
-        
+      <Card className="relative overflow-hidden border-2 border-primary/20 shadow-2xl bg-card/40 backdrop-blur-xl mb-8">
         <CardHeader className="border-b border-border/50 pb-8 bg-gradient-to-b from-primary/5 to-transparent">
           <div className="flex justify-between items-start mb-6">
             <div>
@@ -70,56 +62,69 @@ export default async function PickProofPage({ params }: { params: Promise<{ id: 
             </div>
           </div>
 
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Event</p>
-            <h3 className="text-xl font-bold">{pick.events.away_team} @ {pick.events.home_team}</h3>
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" /> {new Date(pick.events.start_time).toLocaleString()}
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">Odds</p>
+              <p className="text-2xl font-black">{Number(pick.event_markets?.odds || pick.odds_at_submission).toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">Stake</p>
+              <p className="text-2xl font-black">{pick.stake} U</p>
+            </div>
+            <div className="sm:text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">Potential Profit</p>
+              <p className="text-2xl font-black text-primary">
+                {((pick.stake * (pick.event_markets?.odds || pick.odds_at_submission)) - pick.stake).toFixed(2)} U
+              </p>
+            </div>
           </div>
         </CardHeader>
 
-        <CardContent className="pt-8 space-y-8">
-          {/* Top Level Pick Data */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-background/50 border border-border/50">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Selection</p>
-              <p className="text-xl font-black text-primary">{pick.event_markets.selection}</p>
-              <p className="text-xs text-muted-foreground mt-1 uppercase font-bold">{pick.event_markets.market_type}</p>
+        <CardContent className="pt-8 space-y-6">
+          <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            <Target className="h-3.5 w-3.5" /> Market Selection
+          </h4>
+          
+          <div className="p-6 rounded-2xl bg-background/50 border border-border/50 relative overflow-hidden">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h5 className="text-xl font-bold">{pick.events.away_team} @ {pick.events.home_team}</h5>
+                <p className="text-xs text-muted-foreground mt-1">{new Date(pick.events.start_time).toLocaleString()}</p>
+              </div>
+              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest bg-primary/5 text-primary border-primary/20">
+                {pick.event_markets.market_type.replace('s', '').replace('moneyline', 'Moneyline').replace('spread', 'Spread').replace('total', 'Total')}
+              </Badge>
             </div>
-            <div className="p-4 rounded-2xl bg-background/50 border border-border/50">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Odds at Lock</p>
-              <p className="text-xl font-black">{pick.odds_at_submission}</p>
-              <p className="text-xs text-muted-foreground mt-1 uppercase font-bold">Implied: {pick.implied_probability}%</p>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mt-6 pt-6 border-t border-border/30">
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Prediction</p>
+                <p className="text-lg font-black text-primary">{pick.event_markets.selection}</p>
+              </div>
+              {pick.model_probability && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Model Prob.</p>
+                  <p className="text-lg font-black">{pick.model_probability}%</p>
+                </div>
+              )}
+              {pick.edge && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Model Edge</p>
+                  <p className="text-lg font-black text-emerald-500">{pick.edge > 0 ? '+' : ''}{pick.edge}%</p>
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Probability & Edge Section */}
-          <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-primary/2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-            <div className="relative z-10 flex flex-col md:flex-row justify-between gap-6 md:items-center">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Zap className="h-4 w-4 text-primary" />
-                  <p className="text-xs font-bold uppercase tracking-[0.1em] text-primary">Model Intelligence</p>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black tracking-tighter">{pick.model_probability}%</span>
-                  <span className="text-xs font-bold text-muted-foreground uppercase">Probability</span>
-                </div>
+            {pick.reasoning && (
+              <div className="mt-6 p-4 bg-muted/30 rounded-xl border border-border/30 italic text-sm text-muted-foreground">
+                <p className="mb-2 uppercase text-[9px] font-black not-italic tracking-[0.2em] text-muted-foreground/50">Agent Reasoning</p>
+                "{pick.reasoning}"
               </div>
-              <div className="h-px md:h-12 w-full md:w-px bg-primary/20" />
-              <div className="flex-1 md:text-right">
-                <p className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground mb-1">Calculated Edge</p>
-                <div className={`text-4xl font-black tracking-tighter ${isEdgePositive ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {isEdgePositive ? '+' : ''}{pick.edge}%
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Technical Evidence */}
-          <div className="space-y-4 pt-4">
+          <div className="space-y-4 pt-4 border-t border-border/50">
             <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
               <Info className="h-3.5 w-3.5" /> Technical Receipt
             </h4>
@@ -129,8 +134,8 @@ export default async function PickProofPage({ params }: { params: Promise<{ id: 
                 <span className="font-semibold">{new Date(pick.created_at).toISOString()}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/30">
-                <span className="text-muted-foreground">Lock Timestamp</span>
-                <span className="font-semibold">{new Date(pick.lock_timestamp).toISOString()}</span>
+                <span className="text-muted-foreground">Event Kickoff</span>
+                <span className="font-semibold">{new Date(pick.events.start_time).toISOString()}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/30">
                 <span className="text-muted-foreground">Settlement Source</span>
@@ -139,13 +144,6 @@ export default async function PickProofPage({ params }: { params: Promise<{ id: 
               <div className="flex justify-between items-start py-2 border-b border-border/30 gap-4">
                 <span className="text-muted-foreground shrink-0">Immutable Pick ID</span>
                 <span className="font-semibold break-all text-right">{pick.id}</span>
-              </div>
-              <div className="flex justify-between items-start py-2">
-                <span className="text-muted-foreground shrink-0">Content Hash (SHA-256)</span>
-                <span className="font-semibold break-all text-right uppercase">
-                  {/* Mock hash for UI proof, in a real system this would be calculated and stored */}
-                  {Array.from(pick.id.replace(/-/g, '')).reverse().join('').substring(0, 32)}...
-                </span>
               </div>
             </div>
           </div>
