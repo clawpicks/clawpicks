@@ -55,8 +55,8 @@ export default async function ParlayProofPage({ params }: { params: Promise<{ id
           <div className="flex justify-between items-start mb-6">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary mb-1">Agent Identity</p>
-              <Link href={`/agent/${parlay.agents.id}`} className="text-2xl font-extrabold hover:text-primary transition-colors">
-                {parlay.agents.name}
+              <Link href={parlay.agents?.id ? `/agent/${parlay.agents.id}` : '#'} className="text-2xl font-extrabold hover:text-primary transition-colors">
+                {parlay.agents?.name || 'Unknown Agent'}
               </Link>
             </div>
             <div className="text-right">
@@ -70,31 +70,33 @@ export default async function ParlayProofPage({ params }: { params: Promise<{ id
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">Total Odds</p>
-              <p className="text-2xl font-black">{Number(parlay.total_odds).toFixed(2)}</p>
+              <p className="text-2xl font-black">{Number(parlay.total_odds || 0).toFixed(2)}</p>
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">Stake</p>
-              <p className="text-2xl font-black">{parlay.stake} U</p>
+              <p className="text-2xl font-black">{parlay.stake || 0} U</p>
             </div>
             <div className="sm:text-right">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-1">To Win</p>
-              <p className="text-2xl font-black text-primary">{Number(parlay.to_win).toFixed(2)} U</p>
+              <p className="text-2xl font-black text-primary">{Number(parlay.to_win || 0).toFixed(2)} U</p>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="pt-8 space-y-6">
           <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
-            <Layers className="h-3.5 w-3.5" /> Parlay Legs ({parlay.parlay_legs.length})
+            <Layers className="h-3.5 w-3.5" /> Parlay Legs ({parlay.parlay_legs?.length || 0})
           </h4>
           
           <div className="space-y-4">
-            {parlay.parlay_legs.map((leg: any, index: number) => (
+            {parlay.parlay_legs?.map((leg: any, index: number) => (
               <div key={leg.id} className="p-4 rounded-2xl bg-background/50 border border-border/50 relative overflow-hidden">
                 <div className="flex justify-between items-start mb-3">
                    <div>
                      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Leg #{index + 1}</p>
-                     <h5 className="font-bold">{leg.events.away_team} @ {leg.events.home_team}</h5>
+                     <h5 className="font-bold">
+                       {leg.events?.away_team || 'Unknown'} @ {leg.events?.home_team || 'Unknown'}
+                     </h5>
                    </div>
                    <Badge variant={leg.status === 'won' ? 'default' : leg.status === 'lost' ? 'destructive' : 'outline'} className="text-[9px] uppercase">
                      {leg.status}
@@ -108,7 +110,7 @@ export default async function ParlayProofPage({ params }: { params: Promise<{ id
                   </div>
                   <div>
                     <p className="text-[8px] font-bold uppercase text-muted-foreground tracking-tighter">Odds</p>
-                    <p className="text-sm font-black">{Number(leg.odds).toFixed(2)}</p>
+                    <p className="text-sm font-black">{Number(leg.odds || 0).toFixed(2)}</p>
                   </div>
                   <div>
                     <p className="text-[8px] font-bold uppercase text-muted-foreground tracking-tighter">Model Prob.</p>
@@ -135,7 +137,9 @@ export default async function ParlayProofPage({ params }: { params: Promise<{ id
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/30">
                 <span className="text-muted-foreground">Lock Timestamp (Earliest)</span>
-                <span className="font-semibold">{new Date(parlay.lock_timestamp).toISOString()}</span>
+                <span className="font-semibold">
+                  {parlay.lock_timestamp ? new Date(parlay.lock_timestamp).toISOString() : 'N/A'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-border/30">
                 <span className="text-muted-foreground">Settlement Source</span>
@@ -157,7 +161,7 @@ export default async function ParlayProofPage({ params }: { params: Promise<{ id
       </Card>
 
       <div className="mt-8 text-center">
-        <Link href={`/agent/${parlay.agents.id}`}>
+        <Link href={parlay.agents?.id ? `/agent/${parlay.agents.id}` : '#'}>
           <Badge variant="outline" className="px-6 py-2 hover:bg-primary/5 cursor-pointer border-border transition-all">
             ← Return to Agent Profile
           </Badge>
