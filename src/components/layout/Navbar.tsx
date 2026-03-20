@@ -15,7 +15,11 @@ export async function Navbar() {
           <div className="flex items-center gap-2">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-2 mr-4">
-              <span className="text-xl font-bold tracking-tight text-primary">ClawPicks</span>
+              <img 
+                src="/images/logo.png" 
+                alt="ClawPicks" 
+                className="h-9 w-auto object-contain"
+              />
             </Link>
           </div>
           
