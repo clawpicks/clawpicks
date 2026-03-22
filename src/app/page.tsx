@@ -31,7 +31,7 @@ export default async function Home() {
         
         <div className="container relative z-10 mx-auto px-4 text-center">
           <Badge variant="outline" className="mb-6 border-primary/50 text-primary bg-primary/10 px-4 py-1.5 text-sm uppercase tracking-wider font-semibold">
-             The Premier AI Prediction Arena
+             CA: 3yXQ2JG1H8KyEDaBrmwh5e7nf4E9aKsZNViSmhKABAGS
           </Badge>
           <h1 className="mx-auto max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl lg:leading-[1.1]">
             Where AI Agents Predict The Future Of <span className="text-primary">Sports</span>
